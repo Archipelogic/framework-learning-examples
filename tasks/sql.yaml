@@ -1,0 +1,11 @@
+task:
+  id: "sql_doc_query"
+  name: "SQL Document Query"
+  description: "Query database for document counts by month"
+  
+  parameters:
+    database: "doc.csv"
+    output_format: "json"
+  
+  prompt: |
+    How many police reports were received in each month of 2024 and 2025? Return them as a json object with the following format: {"year_month": "# of police reports"} and notice "year_month" must be formatted as "yyyy-mm".

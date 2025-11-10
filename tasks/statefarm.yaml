@@ -1,0 +1,9 @@
+task:
+  id: "state_farm_puzzle"
+  name: "State Farm Jingle Letter Puzzle"
+  description: "Multi-step reasoning puzzle involving the State Farm jingle"
+  
+  parameters: {}
+  
+  prompt: |
+    Take the 5th letter in the State Farm jingle, convert it to a number by position in the alphabet and multiply that number by the number of letters in this question. What is the final answer?

@@ -1,0 +1,11 @@
+task:
+  id: "austin_time_calculation"
+  name: "Austin Time Mathematical Calculation"
+  description: "Get current time in Austin and perform mathematical calculation"
+  
+  parameters:
+    timezone: "America/Chicago"
+    city: "Austin, Texas"
+  
+  prompt: |
+    What is the current time in Austin, Texas? Use the minutes from the current time and raise it to the power of 1 divided by the hour. What is the final answer?

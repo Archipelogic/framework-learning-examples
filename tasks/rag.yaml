@@ -1,0 +1,11 @@
+task:
+  id: "rag_model_search"
+  name: "RAG Model Search"
+  description: "Search through unstructured JSON data to find model information"
+  
+  parameters:
+    data_directory: "data/projects"
+    search_target: "Attorney Demand Classification Model"
+  
+  prompt: |
+    Which model was used in Attorney Demand Classification Model project?
