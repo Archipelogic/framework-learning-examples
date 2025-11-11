@@ -18,6 +18,7 @@ for local development.
 """
 
 import os
+from pathlib import Path
 import yaml
 import logfire
 from pydantic import BaseModel, Field
@@ -42,7 +43,10 @@ def main():
     # ============================================================
     # LOAD TASK CONFIG
     # ============================================================
-    with open('../tasks/statefarm.yaml', 'r') as f:
+    project_root = Path(__file__).parent.parent
+    task_file = project_root / 'tasks' / 'statefarm.yaml'
+    
+    with open(task_file, 'r') as f:
         task_config = yaml.safe_load(f)['task']
     
     task_prompt = task_config['prompt']

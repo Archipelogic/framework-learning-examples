@@ -15,6 +15,7 @@ OBSERVABILITY: Phoenix (Arize) for tracing
 """
 
 import os
+from pathlib import Path
 import yaml
 import phoenix as px
 from phoenix.otel import register
@@ -26,7 +27,11 @@ def main():
     # ============================================================
     # LOAD TASK CONFIG
     # ============================================================
-    with open('../tasks/statefarm.yaml', 'r') as f:
+    # Get project root (parent of crewai directory)
+    project_root = Path(__file__).parent.parent
+    task_file = project_root / 'tasks' / 'statefarm.yaml'
+    
+    with open(task_file, 'r') as f:
         task_config = yaml.safe_load(f)['task']
     
     task_prompt = task_config['prompt']
