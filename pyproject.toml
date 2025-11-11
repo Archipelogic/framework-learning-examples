@@ -20,8 +20,8 @@ dependencies = [
 ]
 
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
 
-[tool.hatch.build.targets.wheel]
-packages = []  # No package to build - this is a scripts-only project
+[tool.setuptools]
+packages = []
