@@ -13,6 +13,11 @@ OBSERVABILITY: Phoenix (Arize) for tracing
 """
 
 import os
+
+# MUST set these BEFORE importing CrewAI to prevent OpenAI connections
+os.environ["OTEL_SDK_DISABLED"] = "true"
+os.environ["OPENAI_API_KEY"] = "sk-fake-key-for-bedrock"
+
 from pathlib import Path
 import yaml
 import phoenix as px
@@ -50,10 +55,6 @@ def main():
     # AWS BEDROCK SETUP
     # ============================================================
     os.environ["AWS_REGION"] = "us-east-1"
-    # Disable OpenAI default - we're using Bedrock
-    os.environ["OPENAI_API_KEY"] = "sk-fake-key-for-bedrock"
-    # Disable CrewAI telemetry to prevent OpenAI connection attempts
-    os.environ["OTEL_SDK_DISABLED"] = "true"
     
     # ============================================================
     # AGENTS: Specialized agents
