@@ -28,10 +28,19 @@ fi
 
 echo "✓ uv is installed"
 
-# Step 2: Sync dependencies using uv
+# Step 2: Create virtual environment and install dependencies
+echo ""
+echo "Setting up virtual environment..."
+if [ ! -d ".venv" ]; then
+    uv venv
+    echo "✓ Virtual environment created"
+else
+    echo "✓ Virtual environment already exists"
+fi
+
 echo ""
 echo "Installing dependencies with uv..."
-uv sync
+uv pip install -r requirements.txt
 echo "✓ Dependencies installed"
 
 # Step 3: Setup sample database
