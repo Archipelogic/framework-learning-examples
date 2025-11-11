@@ -10,3 +10,4 @@ logfire>=0.40.0
 pytz>=2024.1
 langchain-community>=0.3.0
 sqlalchemy>=2.0.0
+huggingface-hub>=0.20.0
