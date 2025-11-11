@@ -194,18 +194,6 @@ Set environment variable:
 export AWS_REGION=us-east-1
 ```
 
-## Contributing
-
-This is a learning repository. Feel free to:
-- Add new task examples
-- Implement additional framework features
-- Improve documentation
-- Report issues
-
-## License
-
-MIT License - See LICENSE file for details
-
 ## Resources
 
 - [CrewAI Documentation](https://docs.crewai.com/)
