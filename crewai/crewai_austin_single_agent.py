@@ -16,6 +16,8 @@ import os
 # MUST set these BEFORE importing CrewAI to prevent OpenAI connections
 os.environ["OTEL_SDK_DISABLED"] = "true"
 os.environ["OPENAI_API_KEY"] = "sk-fake-key-for-bedrock"
+os.environ["CREWAI_TELEMETRY_ENABLED"] = "false"
+os.environ["CREWAI_DISABLE_TELEMETRY"] = "true"
 
 from pathlib import Path
 import yaml
