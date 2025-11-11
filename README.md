@@ -1,4 +1,4 @@
-# AI Framework Examples
+# Agentic AI Framework Examples
 
 Comparative examples of **CrewAI** and **Pydantic AI** implementations across different task types.
 
