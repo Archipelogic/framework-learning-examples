@@ -115,7 +115,7 @@ def main():
         role="Database Analyst",
         goal="Query databases to answer questions",
         backstory="You use SQL tools to query databases and format results.",
-        llm="bedrock/anthropic.claude-sonnet-4-5-v1:0",
+        llm="bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0",
         tools=[get_database_schema, execute_sql_query],
         verbose=True,
         allow_delegation=False

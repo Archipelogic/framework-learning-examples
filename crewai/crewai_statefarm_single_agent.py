@@ -64,7 +64,7 @@ def main():
         role="Task Executor",
         goal="Complete the task as specified",
         backstory="You follow instructions precisely.",
-        llm="bedrock/anthropic.claude-sonnet-4-5-v1:0",
+        llm="bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0",
         verbose=True,
         allow_delegation=False
     )

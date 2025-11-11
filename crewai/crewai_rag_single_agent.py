@@ -68,7 +68,7 @@ def main():
         role="Data Researcher",
         goal="Search through files to answer questions",
         backstory="You use tools to read and search through data files.",
-        llm="bedrock/anthropic.claude-sonnet-4-5-v1:0",
+        llm="bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0",
         tools=[directory_tool, file_read_tool],
         verbose=True,
         allow_delegation=False

@@ -66,7 +66,7 @@ def main():
         role="Knowledge Specialist",
         goal="Handle knowledge-related parts of the task",
         backstory="You focus on recall and information.",
-        llm="bedrock/anthropic.claude-sonnet-4-5-v1:0",
+        llm="bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0",
         verbose=True,
         allow_delegation=False
     )
@@ -75,7 +75,7 @@ def main():
         role="Counter Specialist",
         goal="Handle counting parts of the task",
         backstory="You focus on counting.",
-        llm="bedrock/anthropic.claude-sonnet-4-5-v1:0",
+        llm="bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0",
         verbose=True,
         allow_delegation=False
     )
@@ -84,7 +84,7 @@ def main():
         role="Math Specialist",
         goal="Handle mathematical parts of the task",
         backstory="You focus on calculations.",
-        llm="bedrock/anthropic.claude-sonnet-4-5-v1:0",
+        llm="bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0",
         verbose=True,
         allow_delegation=False
     )

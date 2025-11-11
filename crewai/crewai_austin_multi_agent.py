@@ -63,7 +63,7 @@ def main():
         role="Time Specialist",
         goal="Handle time-related parts of the task",
         backstory="You focus on time determination.",
-        llm="bedrock/anthropic.claude-sonnet-4-5-v1:0",
+        llm="bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0",
         verbose=True,
         allow_delegation=False
     )
@@ -72,7 +72,7 @@ def main():
         role="Math Specialist",
         goal="Handle mathematical parts of the task",
         backstory="You focus on calculations.",
-        llm="bedrock/anthropic.claude-sonnet-4-5-v1:0",
+        llm="bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0",
         verbose=True,
         allow_delegation=False
     )
