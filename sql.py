@@ -20,7 +20,7 @@ import random
 
 def insert_rows_into_table(rows, table, engine):
     """Insert rows into a table"""
-    stmt = insert(table).values(*rows)
+    stmt = insert(table).values(rows)
     with engine.begin() as connection:
         connection.execute(stmt)
 
