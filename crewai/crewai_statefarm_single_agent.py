@@ -51,6 +51,8 @@ def main():
     # AWS BEDROCK SETUP
     # ============================================================
     os.environ["AWS_REGION"] = "us-east-1"
+    # Disable OpenAI default - we're using Bedrock
+    os.environ["OPENAI_API_KEY"] = "sk-fake-key-for-bedrock"
     
     # ============================================================
     # AGENT: Uses ONLY the task prompt
