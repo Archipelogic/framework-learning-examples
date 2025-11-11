@@ -15,13 +15,11 @@ OBSERVABILITY: Phoenix (Arize) for tracing
 
 import os
 
-# MUST set these BEFORE importing CrewAI to prevent OpenAI connections
+# MUST set these BEFORE importing CrewAI
+os.environ["AWS_REGION"] = "us-east-1"
+os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
 os.environ["OTEL_SDK_DISABLED"] = "true"
 os.environ["OPENAI_API_KEY"] = "sk-fake-key-for-bedrock"
-os.environ["CREWAI_TELEMETRY_ENABLED"] = "false"
-os.environ["CREWAI_DISABLE_TELEMETRY"] = "true"
-os.environ["CREWAI_TELEMETRY_ENABLED"] = "false"
-os.environ["CREWAI_DISABLE_TELEMETRY"] = "true"
 
 from pathlib import Path
 import yaml
@@ -55,11 +53,6 @@ def main():
     )
     
     CrewAIInstrumentor().instrument(tracer_provider=tracer_provider)
-    
-    # ============================================================
-    # AWS BEDROCK SETUP
-    # ============================================================
-    os.environ["AWS_REGION"] = "us-east-1"
     
     # ============================================================
     # AGENT: Uses ONLY the task prompt
