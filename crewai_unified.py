@@ -172,8 +172,9 @@ def run_orchestration(user_prompt: str, project_root: Path) -> str:
     
     # Create hierarchical crew with orchestrator as manager
     # The orchestrator will delegate to specialists based on prompt analysis
+    # Note: manager_agent should NOT be in the agents list
     orchestration_crew = Crew(
-        agents=[orchestrator, reasoning_agent, research_agent, database_agent],
+        agents=[reasoning_agent, research_agent, database_agent],
         tasks=[orchestration_task],
         process=Process.hierarchical,  # Enables manager-worker delegation
         manager_agent=orchestrator,    # Orchestrator is the manager
