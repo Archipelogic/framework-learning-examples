@@ -154,24 +154,20 @@ def run_orchestration(user_prompt: str, project_root: Path) -> str:
         allow_delegation=True  # KEY: Enables delegation to other agents
     )
     
-    # Create task for orchestrator
+    # Create task - in hierarchical mode, don't assign to manager
+    # The manager will analyze and delegate automatically
     orchestration_task = Task(
-        description=f"""Analyze this user request and delegate to the appropriate specialist:
+        description=f"""Analyze this user request and provide the answer:
         
         User Request: {user_prompt}
         
-        Available specialists:
-        - Reasoning Specialist (for calculations, puzzles, logical reasoning)
-        - Data Researcher (for file searches)
-        - Database Analyst (for database queries)
-        
-        Delegate this task to the most appropriate specialist.""",
-        agent=orchestrator,
-        expected_output="The final answer from the specialist"
+        Determine what type of task this is and provide a comprehensive answer.""",
+        expected_output="The final answer to the user's question",
+        agent=reasoning_agent  # Assign to a worker agent, manager will delegate as needed
     )
     
     # Create hierarchical crew with orchestrator as manager
-    # The orchestrator will delegate to specialists based on prompt analysis
+    # The orchestrator will analyze the task and delegate to appropriate specialists
     # Note: manager_agent should NOT be in the agents list
     orchestration_crew = Crew(
         agents=[reasoning_agent, research_agent, database_agent],
