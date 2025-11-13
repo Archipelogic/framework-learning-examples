@@ -28,11 +28,15 @@ os.environ["AWS_REGION"] = "us-east-1"
 import phoenix as px
 from phoenix.otel import register
 from openinference.instrumentation.crewai import CrewAIInstrumentor
+import time
 
 # Launch Phoenix for observability
 session = px.launch_app()
 print(f"\n🔥 Phoenix UI: {session.url}")
 print("📊 View traces and spans at the URL above\n")
+
+# Give Phoenix a moment to fully start before registering tracer
+time.sleep(2)
 from crewai import Agent, Task, Crew, Process
 from crewai.tools import BaseTool
 from crewai_tools import RagTool
