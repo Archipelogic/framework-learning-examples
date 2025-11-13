@@ -1,74 +1,93 @@
 # Agentic AI Framework Examples
 
-Comparative examples of **CrewAI** and **Pydantic AI** implementations across different task types.
+Unified implementations of **CrewAI** and **Pydantic AI** with intelligent orchestration agents that automatically route tasks.
 
 ## Overview
 
-This repository demonstrates how to implement the same AI tasks using two popular Python frameworks:
-- **CrewAI**: Multi-agent orchestration framework
-- **Pydantic AI**: Type-safe agent framework with structured outputs
+This repository demonstrates unified implementations of AI frameworks with intelligent orchestration:
+- **CrewAI**: Uses hierarchical process with delegation for task routing
+- **Pydantic AI**: Uses tool-based orchestration where specialists are tools
+
+Each framework has a single script with **only 3 specialized agents**:
+1. **Reasoning Specialist** (no tools) - handles calculations, puzzles, logical reasoning
+2. **Data Researcher** (RAG/file tools) - handles file searches
+3. **Database Analyst** (SQL tools) - handles database queries
+
+An orchestration agent analyzes prompts and delegates to the appropriate specialist.
 
 ## Project Structure
 
 ```
 framework-learning-examples/
-├── crewai/              # CrewAI implementations
-│   ├── crewai_austin_single_agent.py
-│   ├── crewai_austin_multi_agent.py
-│   ├── crewai_statefarm_single_agent.py
-│   ├── crewai_statefarm_multi_agent.py
-│   ├── crewai_statefarm_multi_agent_listen.py  # Flow with @listen
-│   ├── crewai_rag_single_agent.py
-│   └── crewai_sql_single_agent.py
-├── pydantic/            # Pydantic AI implementations
-│   ├── pydantic_austin_single_agent.py
-│   ├── pydantic_austin_no_tools.py
-│   ├── pydantic_statefarm_single_agent.py
-│   ├── pydantic_statefarm_no_tools.py
-│   ├── pydantic_statefarm_logfire.py
-│   ├── pydantic_rag_single_agent.py
-│   └── pydantic_sql_single_agent.py
-├── tasks/               # Task configurations
-│   ├── austin.yaml
-│   ├── statefarm.yaml
-│   ├── rag.yaml
-│   └── sql.yaml
+├── crewai.py            # Unified CrewAI with hierarchical orchestration
+├── pydantic_ai.py       # Unified Pydantic AI with tool-based orchestration
+├── tasks/               # Task configurations (single source of truth)
+│   ├── austin.yaml      # Time calculation task - name, description, prompt
+│   ├── statefarm.yaml   # Jingle puzzle task - name, description, prompt
+│   ├── rag.yaml         # File search task - name, description, prompt
+│   └── sql.yaml         # Database query task - name, description, prompt
 ├── data/                # Sample data files
-└── run.py               # Interactive task runner
+│   ├── projects/        # JSON files for RAG tasks
+│   └── doc.csv          # SQLite database for SQL tasks
+├── run.py               # Interactive task runner with sample prompts
+├── setup.sh             # Automated setup script
+└── run.sh               # Quick run script
 ```
 
-## Tasks
+## Architecture
 
-### 1. Austin Time Calculation
-Get current time in Austin, TX and calculate: `minutes^(1/hour)`
+### Minimal Agent Design
+Both frameworks use only **3 specialized agents**:
 
-**Implementations:**
-- Single agent (CrewAI & Pydantic AI)
-- Multi-agent (CrewAI)
-- No tools - LLM knowledge only (Pydantic AI)
+1. **Reasoning Specialist** (no tools)
+   - Handles: Time calculations, puzzles, riddles, mathematical reasoning
+   - Examples: Austin time calculation, StateFarm jingle puzzle
+   - Flexible enough to handle any logical reasoning task
 
-### 2. StateFarm Jingle Puzzle
-Find 5th letter in State Farm jingle, convert to alphabet position, multiply by question length.
+2. **Data Researcher** (RAG/file tools)
+   - Handles: File searches, document analysis
+   - Tools: CrewAI uses native `RagTool`, Pydantic AI uses custom file reading
+   - Examples: Searching through project JSON files
 
-**Implementations:**
-- Single agent (CrewAI & Pydantic AI)
-- Multi-agent sequential (CrewAI)
-- Multi-agent with Flow + @listen decorator (CrewAI)
-- No tools - LLM knowledge only (Pydantic AI)
-- Logfire observability (Pydantic AI)
+3. **Database Analyst** (SQL tools)
+   - Handles: Database queries, structured data analysis
+   - Tools: Both use LangChain SQL tools (no native available)
+   - Examples: Querying police reports database
 
-### 3. RAG (Retrieval-Augmented Generation)
-Search through JSON files to find model information.
+### Orchestration
+- **CrewAI**: Hierarchical process with `allow_delegation=True`
+- **Pydantic AI**: Tool-based where each specialist is a callable tool
+- **No if/then logic**: The orchestration agent decides which specialist to use based on prompt analysis
 
-**Implementations:**
-- File reading tools (both frameworks)
-- LangChain tools integration (Pydantic AI)
+## How It Works
 
-### 4. SQL Database Query
-Query SQLite database for police reports by month.
+### Execution Flow
 
-**Implementations:**
-- Custom SQL tools (both frameworks)
+1. **User provides a prompt** (e.g., "What time is it in Austin?")
+
+2. **Orchestration agent analyzes the prompt**
+   - CrewAI: Manager agent in hierarchical process
+   - Pydantic AI: Agent with specialist tools
+
+3. **Agent decides which specialist to use**
+   - Reasoning Specialist: for calculations, puzzles, logic
+   - Data Researcher: for file/document searches
+   - Database Analyst: for database queries
+
+4. **Specialist executes the task**
+   - Uses appropriate tools (RAG, SQL, or none)
+   - Returns structured result
+
+5. **Result returned to user**
+   - With reasoning/explanation
+   - Traced in Phoenix for observability
+
+### Key Advantage
+
+The system is **flexible and scalable**:
+- Can handle the 4 example tasks (Austin, StateFarm, RAG, SQL)
+- Can handle 1000s of similar tasks without modification
+- Agent decides based on prompt content, not predefined categories
 
 ## Setup
 
@@ -109,7 +128,7 @@ uv run python sql.py
 
 ## Usage
 
-### Interactive Runner
+### Option 1: Interactive Runner (Recommended)
 
 ```bash
 sh run.sh
@@ -117,47 +136,56 @@ sh run.sh
 uv run python run.py
 ```
 
-This launches an interactive menu to run any example.
+This launches an interactive menu where you can:
+1. Select a framework (CrewAI or Pydantic AI)
+2. Choose from sample prompts (dynamically loaded from `tasks/` YAML files) or enter your own
+3. Watch the orchestration agent delegate to specialists
 
-### Run Individual Scripts
+### Option 2: Direct Script Execution
 
 ```bash
-# CrewAI examples
-uv run python crewai/crewai_statefarm_multi_agent_listen.py
+# CrewAI - orchestration agent will analyze and delegate
+uv run python crewai.py "What is the current time in Austin?"
 
-# Pydantic AI examples
-uv run python pydantic/pydantic_statefarm_logfire.py
+# Pydantic AI - orchestration agent will select appropriate tool
+uv run python pydantic_ai.py "How many police reports in 2024?"
+
+# File search example
+uv run python crewai.py "Which model was used in the Attorney Demand Classification project?"
+
+# Puzzle example
+uv run python pydantic_ai.py "Take the 5th letter in the State Farm jingle and multiply by 10"
 ```
+
+The orchestration agent automatically determines which specialist to use - no manual task selection needed!
 
 ## Key Features Demonstrated
 
 ### CrewAI
-- **Sequential Process**: Tasks execute in order
-- **Multi-Agent Collaboration**: Specialized agents working together
-- **Flow with @listen**: Event-driven reactive workflows
-- **Built-in Tools**: DirectoryReadTool, FileReadTool
-- **Custom Tools**: SQL query tools with @tool decorator
+- **Hierarchical Delegation**: Orchestrator delegates to 3 specialized agents
+- **Minimal Agent Set**: Only 3 agents handle all task types
+- **Native RAG Tool**: Built-in RagTool for file search
+- **LangChain Integration**: SQL tools from langchain_community
+- **Flexible Architecture**: Reasoning agent handles multiple task types
 - **Phoenix Observability**: Tracing with Arize Phoenix
 
 ### Pydantic AI
+- **Tool-Based Orchestration**: Specialists exposed as callable tools
+- **Minimal Agent Set**: Only 3 agents handle all task types
 - **Structured Outputs**: Type-safe results with Pydantic models
-- **Tool Integration**: LangChain tools compatibility
-- **Dependency Injection**: Clean separation of concerns
-- **Logfire Observability**: Pydantic's native observability platform
-- **Streaming Support**: Real-time response streaming
-- **No-Tools Mode**: Pure LLM reasoning without external tools
+- **Custom Tools**: File reading tools with @agent.tool decorator
+- **LangChain Integration**: SQL tools compatibility
+- **Flexible Architecture**: Reasoning agent handles multiple task types
+- **Phoenix Observability**: Tracing with Arize Phoenix
 
 ## Observability
 
-All examples include observability integration:
+Both unified scripts include Phoenix observability:
 
-- **Phoenix (Arize)**: Used in most examples
+- **Phoenix (Arize)**: Used in both frameworks
   - Launches at `http://localhost:6006`
   - Provides detailed trace visualization
-
-- **Logfire**: Used in Pydantic AI examples
-  - Pydantic's native observability platform
-  - Console logging + optional cloud integration
+  - Tracks orchestration flow and tool usage
 
 ## Dependencies
 
