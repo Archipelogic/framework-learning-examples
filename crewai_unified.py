@@ -102,31 +102,44 @@ def create_specialized_agents(project_root: Path) -> tuple[Agent, Agent, Agent]:
         allow_delegation=False
     )
     
-    # 2. Data Research Agent (using VectorStore with Bedrock embeddings - teammate's pattern)
-    from langchain_community.embeddings import BedrockEmbeddings
+    # 2. Data Research Agent (load pre-computed embeddings like teammate)
     from langchain_community.vectorstores import FAISS
-    from langchain_community.document_loaders import JSONLoader
+    from langchain_community.embeddings import BedrockEmbeddings
+    from langchain.docstore.document import Document
+    import json
+    import numpy as np
     
-    # Load documents from JSON file
-    docs_file = project_root / 'data' / 'DS_Projects_Docs.json'
-    loader = JSONLoader(file_path=str(docs_file), jq_schema='.[]', text_content=False)
-    documents = loader.load()
+    # Load pre-computed embeddings and metadata
+    embeddings_file = project_root / 'data' / 'text_embeddings.json'
+    metadata_file = project_root / 'data' / 'metadata.json'
     
-    # Create embeddings using Bedrock
-    embeddings = BedrockEmbeddings(
+    with open(embeddings_file) as f:
+        embedding_vectors = np.array(json.load(f))
+    with open(metadata_file) as f:
+        metadata_list = json.load(f)
+    
+    # Create documents from metadata
+    documents = [Document(page_content=meta.get('text', ''), metadata=meta) for meta in metadata_list]
+    
+    # Create embeddings wrapper (for query embedding only)
+    bedrock_embeddings = BedrockEmbeddings(
         model_id="amazon.titan-embed-text-v1",
         region_name="us-east-1"
     )
     
-    # Create vector store
-    vectorstore = FAISS.from_documents(documents, embeddings)
+    # Create FAISS index from pre-computed embeddings
+    vectorstore = FAISS.from_embeddings(
+        text_embeddings=list(zip([doc.page_content for doc in documents], embedding_vectors)),
+        embedding=bedrock_embeddings,
+        metadatas=[doc.metadata for doc in documents]
+    )
     
     # Create retriever tool
     from langchain.tools.retriever import create_retriever_tool
     retriever_tool = create_retriever_tool(
         vectorstore.as_retriever(search_kwargs={"k": 3}),
         "search_project_docs",
-        "Search through project documentation to find relevant information"
+        "Search project documentation using semantic similarity"
     )
     
     research_agent = Agent(
