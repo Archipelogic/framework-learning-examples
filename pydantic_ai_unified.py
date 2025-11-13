@@ -138,15 +138,32 @@ def create_database_agent(model: BedrockConverseModel, db_path: Path) -> Agent:
     Handles querying databases and structured data.
     """
     db = SQLDatabase.from_uri(f"sqlite:///{db_path}")
-    
-    schema_tool = InfoSQLDatabaseTool(db=db)
-    query_tool = QuerySQLDatabaseTool(db=db)
-    
-    return Agent[SQLResult](
+
+    # Create agent that will expose simple SQL tools
+    agent = Agent[SQLResult](
         model=model,
         system_prompt="You query databases using SQL and format results as JSON.",
-        tools=[schema_tool, query_tool]
+        deps_type=Path,
     )
+
+    @agent.tool
+    def get_schema(ctx: RunContext[Path]) -> str:
+        """Get database schema information for available tables and columns."""
+        try:
+            return db.get_table_info()
+        except Exception as e:
+            return f"Error getting schema: {str(e)}"
+
+    @agent.tool
+    def run_sql(ctx: RunContext[Path], query: str) -> SQLResult:
+        """Execute a SQL query against the SQLite database and return structured results."""
+        try:
+            raw = db.run(query)
+            return SQLResult(query_executed=query, results={"raw": raw})
+        except Exception as e:
+            return SQLResult(query_executed=query, results={"error": str(e)})
+
+    return agent
 
 
 # ============================================================
