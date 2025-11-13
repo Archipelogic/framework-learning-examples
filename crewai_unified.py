@@ -23,6 +23,8 @@ os.environ["OPENAI_API_KEY"] = "sk-fake-key-for-bedrock"
 os.environ["AWS_REGION"] = "us-east-1"
 # Disable CrewAI's own telemetry (not Phoenix/OpenTelemetry)
 os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
+# Disable SSL verification for local Phoenix (localhost doesn't need SSL)
+os.environ["OTEL_EXPORTER_OTLP_INSECURE"] = "true"
 
 import phoenix as px
 from phoenix.otel import register
@@ -220,11 +222,10 @@ def main():
     # ============================================================
     # SETUP PHOENIX TRACING
     # ============================================================
-    # Register with auto_instrument and then manually instrument CrewAI and LangChain
+    # Register WITHOUT auto_instrument to avoid instrumenting CrewAI's telemetry
     tracer_provider = register(
         project_name="crewai-orchestrator",
-        endpoint="http://localhost:6006/v1/traces",
-        auto_instrument=True
+        endpoint="http://localhost:6006/v1/traces"
     )
     # Instrument CrewAI for agent/task tracing
     CrewAIInstrumentor().instrument(skip_dep_check=True, tracer_provider=tracer_provider)
