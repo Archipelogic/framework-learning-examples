@@ -3,13 +3,14 @@
 Unified CrewAI Implementation with Intelligent Orchestration
 
 Architecture:
-- 1 Orchestration Agent (hierarchical manager with delegation)
+- 1 Orchestration Agent (with delegation enabled)
 - 3 Specialized Agents:
   1. Reasoning Specialist (no tools) - calculations, puzzles, logical reasoning
   2. Data Researcher (native RagTool) - file searches and document analysis
-  3. Database Analyst (LangChain SQL tools) - database queries
+  3. Database Analyst (LangChain SQL tools wrapped in BaseTool) - database queries
 
 The orchestration agent analyzes prompts and delegates to the appropriate specialist.
+Uses sequential process with allow_delegation=True for dynamic task routing.
 NO if/then logic - the agent decides everything through delegation.
 """
 
@@ -154,26 +155,29 @@ def run_orchestration(user_prompt: str, project_root: Path) -> str:
         allow_delegation=True  # KEY: Enables delegation to other agents
     )
     
-    # Create task - in hierarchical mode, don't assign to manager
-    # The manager will analyze and delegate automatically
+    # Create task for orchestrator with delegation enabled
+    # Orchestrator will analyze and delegate to appropriate specialists
     orchestration_task = Task(
-        description=f"""Analyze this user request and provide the answer:
+        description=f"""Analyze this user request and delegate to the appropriate specialist:
         
         User Request: {user_prompt}
         
-        Determine what type of task this is and provide a comprehensive answer.""",
-        expected_output="The final answer to the user's question",
-        agent=reasoning_agent  # Assign to a worker agent, manager will delegate as needed
+        You have access to these specialists:
+        - Reasoning Specialist: for calculations, puzzles, riddles, and logical reasoning
+        - Data Researcher: for searching through files and documents  
+        - Database Analyst: for querying databases and structured data
+        
+        Analyze the request, determine which specialist is needed, and delegate the work to them.""",
+        expected_output="The final answer from the appropriate specialist",
+        agent=orchestrator  # Orchestrator with delegation enabled
     )
     
-    # Create hierarchical crew with orchestrator as manager
-    # The orchestrator will analyze the task and delegate to appropriate specialists
-    # Note: manager_agent should NOT be in the agents list
+    # Create sequential crew with delegation
+    # Orchestrator can delegate to any of the specialists as needed
     orchestration_crew = Crew(
-        agents=[reasoning_agent, research_agent, database_agent],
+        agents=[orchestrator, reasoning_agent, research_agent, database_agent],
         tasks=[orchestration_task],
-        process=Process.hierarchical,  # Enables manager-worker delegation
-        manager_agent=orchestrator,    # Orchestrator is the manager
+        process=Process.sequential,  # Sequential process with delegation
         verbose=True
     )
     

@@ -5,7 +5,7 @@ Unified implementations of **CrewAI** and **Pydantic AI** with intelligent orche
 ## Overview
 
 This repository demonstrates unified implementations of AI frameworks with intelligent orchestration:
-- **CrewAI**: Uses hierarchical process with delegation for task routing
+- **CrewAI**: Uses sequential process with delegation for task routing
 - **Pydantic AI**: Uses tool-based orchestration where specialists are tools
 
 Each framework has a single script with **only 3 specialized agents**:
@@ -55,7 +55,7 @@ Both frameworks use only **3 specialized agents**:
    - Examples: Querying police reports database
 
 ### Orchestration
-- **CrewAI**: Hierarchical process with `allow_delegation=True`
+- **CrewAI**: Sequential process with `allow_delegation=True` on orchestrator
 - **Pydantic AI**: Tool-based where each specialist is a callable tool
 - **No if/then logic**: The orchestration agent decides which specialist to use based on prompt analysis
 
@@ -66,7 +66,7 @@ Both frameworks use only **3 specialized agents**:
 1. **User provides a prompt** (e.g., "What time is it in Austin?")
 
 2. **Orchestration agent analyzes the prompt**
-   - CrewAI: Manager agent in hierarchical process
+   - CrewAI: Orchestrator agent with delegation enabled
    - Pydantic AI: Agent with specialist tools
 
 3. **Agent decides which specialist to use**
@@ -162,10 +162,10 @@ The orchestration agent automatically determines which specialist to use - no ma
 ## Key Features Demonstrated
 
 ### CrewAI
-- **Hierarchical Delegation**: Orchestrator delegates to 3 specialized agents
+- **Sequential with Delegation**: Orchestrator delegates to 3 specialized agents
 - **Minimal Agent Set**: Only 3 agents handle all task types
 - **Native RAG Tool**: Built-in RagTool for file search
-- **LangChain Integration**: SQL tools from langchain_community
+- **LangChain Integration**: SQL tools wrapped in BaseTool
 - **Flexible Architecture**: Reasoning agent handles multiple task types
 - **Phoenix Observability**: Tracing with Arize Phoenix
 
