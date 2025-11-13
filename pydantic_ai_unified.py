@@ -67,11 +67,8 @@ class OrchestratorDeps(BaseModel):
 # SPECIALIZED AGENTS (Minimal Set)
 # ============================================================
 def create_reasoning_agent(model: BedrockConverseModel) -> Agent:
-    """
-    Create general reasoning agent (no tools).
-    Handles calculations, puzzles, riddles, and any logical reasoning task.
-    """
-    return Agent[GenericResult](
+    """General reasoning agent (no tools)."""
+    return Agent(
         model=model,
         system_prompt="""You excel at reasoning, calculations, puzzles, and problem-solving.
         You can handle time calculations, mathematical problems, riddles, multi-step reasoning,
@@ -84,7 +81,7 @@ def create_research_agent(model: BedrockConverseModel, data_dir: Path) -> Agent:
     Create data research agent (with file reading tools).
     Handles searching through files and documents.
     """
-    agent = Agent[GenericResult](
+    agent = Agent(
         model=model,
         system_prompt=f"You search through files to find information. Files are located in: {data_dir}",
         deps_type=Path
@@ -140,7 +137,7 @@ def create_database_agent(model: BedrockConverseModel, db_path: Path) -> Agent:
     db = SQLDatabase.from_uri(f"sqlite:///{db_path}")
 
     # Create agent that will expose simple SQL tools
-    agent = Agent[SQLResult](
+    agent = Agent(
         model=model,
         system_prompt="You query databases using SQL and format results as JSON.",
         deps_type=Path,
@@ -155,13 +152,13 @@ def create_database_agent(model: BedrockConverseModel, db_path: Path) -> Agent:
             return f"Error getting schema: {str(e)}"
 
     @agent.tool
-    def run_sql(ctx: RunContext[Path], query: str) -> SQLResult:
-        """Execute a SQL query against the SQLite database and return structured results."""
+    def run_sql(ctx: RunContext[Path], query: str) -> str:
+        """Execute a SQL query against the SQLite database and return raw text results."""
         try:
             raw = db.run(query)
-            return SQLResult(query_executed=query, results={"raw": raw})
+            return str(raw)
         except Exception as e:
-            return SQLResult(query_executed=query, results={"error": str(e)})
+            return f"Error executing SQL: {str(e)}"
 
     return agent
 
@@ -189,7 +186,7 @@ def run_orchestration(user_prompt: str, project_root: Path) -> str:
     
     # Create orchestration agent with all specialists as tools
     # Each specialist is exposed as a callable tool that the orchestrator can invoke
-    orchestrator = Agent[str](
+    orchestrator = Agent(
         model=model,
         system_prompt="""You are a master orchestrator with access to specialized agents.
         Analyze the user's request and call the appropriate specialist:
@@ -214,7 +211,8 @@ def run_orchestration(user_prompt: str, project_root: Path) -> str:
         """
         print("\n→ Delegating to Reasoning Specialist")
         result = reasoning_agent.run_sync(task)
-        return f"{result.output.answer}\n\nReasoning:\n{result.output.reasoning}"
+        payload = getattr(result, "output", result)
+        return str(payload)
     
     @orchestrator.tool
     def call_data_researcher(ctx: RunContext[OrchestratorDeps], task: str) -> str:
@@ -226,7 +224,8 @@ def run_orchestration(user_prompt: str, project_root: Path) -> str:
         print("\n→ Delegating to Data Researcher")
         data_dir = ctx.deps.project_root / 'data' / 'projects'
         result = research_agent.run_sync(task, deps=data_dir)
-        return f"{result.output.answer}\n\nReasoning:\n{result.output.reasoning}"
+        payload = getattr(result, "output", result)
+        return str(payload)
     
     @orchestrator.tool
     def call_database_analyst(ctx: RunContext[OrchestratorDeps], task: str) -> str:
@@ -237,7 +236,8 @@ def run_orchestration(user_prompt: str, project_root: Path) -> str:
         """
         print("\n→ Delegating to Database Analyst")
         result = database_agent.run_sync(task)
-        return f"Query Executed:\n{result.output.query_executed}\n\nResults:\n{json.dumps(result.output.results, indent=2)}"
+        payload = getattr(result, "output", result)
+        return str(payload)
     
     # Run orchestration - agent will analyze prompt and call appropriate tool
     deps = OrchestratorDeps(project_root=project_root, user_prompt=user_prompt)
@@ -245,8 +245,8 @@ def run_orchestration(user_prompt: str, project_root: Path) -> str:
         f"Analyze this request and call the appropriate specialist: {user_prompt}",
         deps=deps
     )
-    
-    return result.data
+    payload = getattr(result, "output", result)
+    return str(payload)
 
 
 def main():
