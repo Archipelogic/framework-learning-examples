@@ -46,12 +46,8 @@ echo "✓ Dependencies installed"
 # Step 3: Setup sample database
 echo ""
 echo "Setting up sample database..."
-if [ ! -f "data/doc.csv" ]; then
-    uv run python sql.py
-    echo "✓ Database created"
-else
-    echo "✓ Database already exists"
-fi
+uv run python sql.py
+echo "✓ Database created"
 
 # Step 4: Check AWS credentials
 echo ""
