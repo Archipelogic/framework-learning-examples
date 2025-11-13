@@ -5,7 +5,7 @@ Unified CrewAI Implementation with Intelligent Orchestration
 Architecture:
 - 1 Orchestration Agent (with delegation enabled)
 - 3 Specialized Agents:
-  1. Reasoning Specialist (time tool) - calculations, puzzles, logical reasoning, time queries
+  1. Reasoning Specialist (inject_date=True) - calculations, puzzles, logical reasoning, time queries
   2. Data Researcher (native RagTool) - file searches and document analysis
   3. Database Analyst (LangChain SQL tools wrapped in BaseTool) - database queries
 
@@ -38,8 +38,6 @@ from langchain_community.tools.sql_database.tool import (
     QuerySQLDatabaseTool as LCQueryTool,
 )
 from pydantic import Field
-from datetime import datetime
-import pytz
 
 
 # ============================================================
@@ -53,29 +51,17 @@ def create_specialized_agents(project_root: Path) -> tuple[Agent, Agent, Agent]:
     3. Database Agent (SQL tools) - handles database queries
     """
     
-    # 1. General Reasoning Agent (with time tool for time-based calculations)
-    class CurrentTimeTool(BaseTool):
-        name: str = "Get Current Time"
-        description: str = "Get the current time in a specific timezone. Input should be a timezone name like 'America/Chicago' or 'UTC'."
-        
-        def _run(self, timezone: str = "UTC") -> str:
-            try:
-                tz = pytz.timezone(timezone)
-                current_time = datetime.now(tz)
-                return f"Current time in {timezone}: {current_time.strftime('%Y-%m-%d %H:%M:%S %Z')}"
-            except Exception as e:
-                return f"Error getting time: {str(e)}"
-    
+    # 1. General Reasoning Agent (with date awareness for time-based calculations)
     reasoning_agent = Agent(
         role="Reasoning Specialist",
         goal="Solve problems through logical reasoning and calculation",
         backstory="""You excel at reasoning, calculations, puzzles, and problem-solving.
         You can handle time calculations, mathematical problems, riddles, multi-step reasoning,
-        and any task that requires logical thinking. You have access to current time information.""",
+        and any task that requires logical thinking.""",
         llm="bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0",
-        tools=[CurrentTimeTool()],
         verbose=True,
-        allow_delegation=False
+        allow_delegation=False,
+        inject_date=True  # Native CrewAI feature for date/time awareness
     )
     
     # 2. Data Research Agent (with RAG tool)
