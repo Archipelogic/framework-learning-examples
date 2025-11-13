@@ -57,6 +57,18 @@ from pydantic import Field
 from datetime import datetime
 import pytz
 
+# ============================================================
+# SETUP PHOENIX TRACING - MUST BE BEFORE CREATING ANY CREWS
+# ============================================================
+print("🔧 Setting up Phoenix tracing...")
+tracer_provider = register(
+    project_name="crewai-orchestrator",
+    endpoint="http://localhost:6006/v1/traces"
+)
+CrewAIInstrumentor().instrument(skip_dep_check=True, tracer_provider=tracer_provider)
+LangChainInstrumentor().instrument(tracer_provider=tracer_provider)
+print("✅ Phoenix tracing ready\n")
+
 
 # ============================================================
 # SPECIALIZED AGENTS (Minimal Set)
@@ -219,18 +231,7 @@ def run_orchestration(user_prompt: str, project_root: Path) -> str:
 
 def main():
     """Main entry point"""
-    # ============================================================
-    # SETUP PHOENIX TRACING
-    # ============================================================
-    # Register WITHOUT auto_instrument to avoid instrumenting CrewAI's telemetry
-    tracer_provider = register(
-        project_name="crewai-orchestrator",
-        endpoint="http://localhost:6006/v1/traces"
-    )
-    # Instrument CrewAI for agent/task tracing
-    CrewAIInstrumentor().instrument(skip_dep_check=True, tracer_provider=tracer_provider)
-    # Instrument LangChain for LLM call tracing (CrewAI < 0.63.0 uses LangChain)
-    LangChainInstrumentor().instrument(tracer_provider=tracer_provider)
+    # Phoenix tracing already set up at module level
     
     # ============================================================
     # GET USER PROMPT
