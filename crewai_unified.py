@@ -38,6 +38,8 @@ from langchain_community.tools.sql_database.tool import (
     QuerySQLDatabaseTool as LCQueryTool,
 )
 from pydantic import Field
+from datetime import datetime
+import pytz
 
 
 # ============================================================
@@ -46,22 +48,34 @@ from pydantic import Field
 def create_specialized_agents(project_root: Path) -> tuple[Agent, Agent, Agent]:
     """
     Create minimal set of specialized agents:
-    1. Reasoning Agent (no tools) - handles calculations, puzzles, general reasoning
+    1. Reasoning Agent (time tool) - handles calculations, puzzles, general reasoning
     2. Data Research Agent (RAG tool) - handles file searches
     3. Database Agent (SQL tools) - handles database queries
     """
     
-    # 1. General Reasoning Agent (with date awareness for time-based calculations)
+    # 1. General Reasoning Agent (with time tool - inject_date only gives date, not time)
+    class CurrentTimeTool(BaseTool):
+        name: str = "Get Current Time"
+        description: str = "Get the current time in a specific timezone. Input should be a timezone name like 'America/Chicago', 'America/New_York', or 'UTC'."
+        
+        def _run(self, timezone: str = "UTC") -> str:
+            try:
+                tz = pytz.timezone(timezone)
+                current_time = datetime.now(tz)
+                return f"Current time in {timezone}: {current_time.strftime('%Y-%m-%d %H:%M:%S %Z')}"
+            except Exception as e:
+                return f"Error getting time: {str(e)}"
+    
     reasoning_agent = Agent(
         role="Reasoning Specialist",
         goal="Solve problems through logical reasoning and calculation",
         backstory="""You excel at reasoning, calculations, puzzles, and problem-solving.
         You can handle time calculations, mathematical problems, riddles, multi-step reasoning,
-        and any task that requires logical thinking.""",
+        and any task that requires logical thinking. You have access to current time information.""",
         llm="bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+        tools=[CurrentTimeTool()],
         verbose=True,
-        allow_delegation=False,
-        inject_date=True  # Native CrewAI feature for date/time awareness
+        allow_delegation=False
     )
     
     # 2. Data Research Agent (with RAG tool)
