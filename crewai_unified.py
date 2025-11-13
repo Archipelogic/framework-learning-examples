@@ -52,6 +52,7 @@ import json
 import numpy as np
 import boto3
 from langchain_community.vectorstores import FAISS
+from langchain_community.vectorstores.utils import DistanceStrategy
 from langchain_aws import BedrockEmbeddings
 from langchain_core.documents import Document
 
@@ -92,48 +93,37 @@ def create_specialized_agents(project_root: Path) -> tuple[Agent, Agent, Agent]:
         allow_delegation=False
     )
     
-    # 2. Data Research Agent (load pre-computed embeddings like teammate)
-    # Load pre-computed embeddings and metadata
-    embeddings_file = project_root / 'data' / 'text_embeddings.json'
+    # 2. Data Research Agent (create vectorstore like teammate's implementation)
+    def create_langchain_faiss_vectorstore(text_embeddings_path, metadata_path, embedding_function):
+        """Create FAISS vectorstore from pre-computed embeddings"""
+        # Load embeddings and metadata
+        text_embeddings = json.load(open(text_embeddings_path))
+        text_embeddings = [(text, np.array(vec)) for text, vec in text_embeddings]
+        metadata_list = json.load(open(metadata_path))
+        
+        # Create vectorstore using from_embeddings
+        vectorstore = FAISS.from_embeddings(
+            text_embeddings=text_embeddings,
+            embedding=embedding_function,
+            metadatas=metadata_list,
+            distance_strategy=DistanceStrategy.MAX_INNER_PRODUCT,
+            relevance_score_fn=lambda distance: (distance + 1.0) / 2.0
+        )
+        return vectorstore
+    
+    # Get embedding function for vectorstore
+    def get_embedding_for_vectordb(bedrock_client, model_id):
+        embedding_function = BedrockEmbeddings(client=bedrock_client, model_id=model_id)
+        return embedding_function.embed_query
+    
+    # Setup
+    model_id = "amazon.titan-embed-text-v1"
+    bedrock_client = boto3.client('bedrock-runtime', region_name='us-east-1')
+    text_embeddings_file = project_root / 'data' / 'text_embeddings.json'
     metadata_file = project_root / 'data' / 'metadata.json'
     
-    with open(embeddings_file) as f:
-        embedding_vectors = np.array(json.load(f))
-    with open(metadata_file) as f:
-        metadata_list = json.load(f)
-    
-    # Create documents from metadata
-    documents = [Document(page_content=meta.get('text', ''), metadata=meta) for meta in metadata_list]
-    
-    # Create embeddings wrapper (for query embedding only)
-    bedrock_embeddings = BedrockEmbeddings(
-        model_id="amazon.titan-embed-text-v1",
-        region_name="us-east-1"
-    )
-    
-    # Create FAISS index from pre-computed embeddings
-    # Use from_texts to create the structure, then replace with our embeddings
-    import faiss
-    from langchain_community.docstore.in_memory import InMemoryDocstore
-    
-    # Get embedding dimension
-    embedding_dim = embedding_vectors.shape[1]
-    
-    # Create FAISS index
-    index = faiss.IndexFlatL2(embedding_dim)
-    index.add(embedding_vectors.astype('float32'))
-    
-    # Create docstore
-    docstore = InMemoryDocstore({str(i): doc for i, doc in enumerate(documents)})
-    index_to_docstore_id = {i: str(i) for i in range(len(documents))}
-    
-    # Create vectorstore
-    vectorstore = FAISS(
-        embedding_function=bedrock_embeddings,
-        index=index,
-        docstore=docstore,
-        index_to_docstore_id=index_to_docstore_id
-    )
+    embedding_function = get_embedding_for_vectordb(bedrock_client, model_id)
+    vectorstore = create_langchain_faiss_vectorstore(text_embeddings_file, metadata_file, embedding_function)
     
     # Create retriever tool using BaseTool
     class VectorSearchTool(BaseTool):
