@@ -112,12 +112,27 @@ def create_specialized_agents(project_root: Path) -> tuple[Agent, Agent, Agent]:
     )
     
     # Create FAISS index from pre-computed embeddings
-    # embedding_vectors is shape (n, embedding_dim), need to pass list of (text, vector) tuples
-    text_embedding_pairs = [(doc.page_content, embedding_vectors[i].tolist()) for i, doc in enumerate(documents)]
-    vectorstore = FAISS.from_embeddings(
-        text_embeddings=text_embedding_pairs,
-        embedding=bedrock_embeddings,
-        metadatas=[doc.metadata for doc in documents]
+    # Use from_texts to create the structure, then replace with our embeddings
+    import faiss
+    from langchain_community.docstore.in_memory import InMemoryDocstore
+    
+    # Get embedding dimension
+    embedding_dim = embedding_vectors.shape[1]
+    
+    # Create FAISS index
+    index = faiss.IndexFlatL2(embedding_dim)
+    index.add(embedding_vectors.astype('float32'))
+    
+    # Create docstore
+    docstore = InMemoryDocstore({str(i): doc for i, doc in enumerate(documents)})
+    index_to_docstore_id = {i: str(i) for i in range(len(documents))}
+    
+    # Create vectorstore
+    vectorstore = FAISS(
+        embedding_function=bedrock_embeddings,
+        index=index,
+        docstore=docstore,
+        index_to_docstore_id=index_to_docstore_id
     )
     
     # Create retriever tool using BaseTool
