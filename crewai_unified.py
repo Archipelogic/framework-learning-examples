@@ -104,7 +104,7 @@ def create_specialized_agents(project_root: Path) -> tuple[Agent, Agent, Agent]:
     
     # 2. Data Research Agent (load pre-computed embeddings like teammate)
     from langchain_community.vectorstores import FAISS
-    from langchain_community.embeddings import BedrockEmbeddings
+    from langchain_aws import BedrockEmbeddings
     from langchain.docstore.document import Document
     import json
     import numpy as np
