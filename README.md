@@ -9,7 +9,7 @@ This repository demonstrates unified implementations of AI frameworks with intel
 - **Pydantic AI**: Uses tool-based orchestration where specialists are tools
 
 Each framework has a single script with **only 3 specialized agents**:
-1. **Reasoning Specialist** (no tools) - handles calculations, puzzles, logical reasoning
+1. **Reasoning Specialist** (time tool) - handles calculations, puzzles, logical reasoning, time queries
 2. **Data Researcher** (RAG/file tools) - handles file searches
 3. **Database Analyst** (SQL tools) - handles database queries
 
@@ -39,8 +39,9 @@ framework-learning-examples/
 ### Minimal Agent Design
 Both frameworks use only **3 specialized agents**:
 
-1. **Reasoning Specialist** (no tools)
+1. **Reasoning Specialist** (time tool)
    - Handles: Time calculations, puzzles, riddles, mathematical reasoning
+   - Tools: Custom time tool to get current time in any timezone
    - Examples: Austin time calculation, StateFarm jingle puzzle
    - Flexible enough to handle any logical reasoning task
 
