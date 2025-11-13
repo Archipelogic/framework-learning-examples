@@ -215,9 +215,7 @@ def main():
     # ============================================================
     # OBSERVABILITY SETUP
     # ============================================================
-    session = px.launch_app()
-    print(f"Phoenix UI: {session.url}")
-    
+    # Phoenix already launched at module level, just register tracer
     tracer_provider = register(
         project_name="crewai-orchestrator",
         endpoint="http://localhost:6006/v1/traces"
