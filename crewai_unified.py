@@ -33,7 +33,7 @@ from langchain_community.utilities import SQLDatabase
 from langchain_community.tools.sql_database.tool import (
     InfoSQLDatabaseTool,
     ListSQLDatabaseTool,
-    QuerySQLDataBaseTool,
+    QuerySQLDatabaseTool,
 )
 
 
@@ -79,7 +79,7 @@ def create_specialized_agents(project_root: Path) -> tuple[Agent, Agent, Agent]:
     db_path = project_root / 'data' / 'doc.csv'
     db = SQLDatabase.from_uri(f"sqlite:///{db_path}")
     
-    query_tool = QuerySQLDataBaseTool(db=db)
+    query_tool = QuerySQLDatabaseTool(db=db)
     info_tool = InfoSQLDatabaseTool(db=db)
     list_tool = ListSQLDatabaseTool(db=db)
     

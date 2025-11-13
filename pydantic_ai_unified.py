@@ -29,7 +29,7 @@ from pydantic_ai.models.bedrock import BedrockModel
 from langchain_community.utilities import SQLDatabase
 from langchain_community.tools.sql_database.tool import (
     InfoSQLDatabaseTool,
-    QuerySQLDataBaseTool
+    QuerySQLDatabaseTool
 )
 
 
@@ -136,7 +136,7 @@ def create_database_agent(model: BedrockModel, db_path: Path) -> Agent:
     db = SQLDatabase.from_uri(f"sqlite:///{db_path}")
     
     schema_tool = InfoSQLDatabaseTool(db=db)
-    query_tool = QuerySQLDataBaseTool(db=db)
+    query_tool = QuerySQLDatabaseTool(db=db)
     
     return Agent(
         model=model,
