@@ -54,7 +54,7 @@ print("✅ Phoenix tracing ready (Bedrock instrumented)\n")
 # Import CrewAI after instrumentation
 from crewai import Agent, Task, Crew, Process
 from crewai.tools import BaseTool
-from crewai_tools import RagTool
+from crewai_tools import JSONSearchTool
 from langchain_community.utilities import SQLDatabase
 from langchain_community.tools.sql_database.tool import (
     InfoSQLDatabaseTool as LCInfoTool,
@@ -102,20 +102,39 @@ def create_specialized_agents(project_root: Path) -> tuple[Agent, Agent, Agent]:
         allow_delegation=False
     )
     
-    # 2. Data Research Agent (with custom vector search tool)
-    # Import custom vector search tool that loads from pre-computed embeddings
-    import sys
-    sys.path.insert(0, str(project_root))
-    from vector_search_tool import VectorSearchTool
+    # 2. Data Research Agent (using VectorStore with Bedrock embeddings - teammate's pattern)
+    from langchain_community.embeddings import BedrockEmbeddings
+    from langchain_community.vectorstores import FAISS
+    from langchain_community.document_loaders import JSONLoader
     
-    vector_search = VectorSearchTool()
+    # Load documents from JSON file
+    docs_file = project_root / 'data' / 'DS_Projects_Docs.json'
+    loader = JSONLoader(file_path=str(docs_file), jq_schema='.[]', text_content=False)
+    documents = loader.load()
+    
+    # Create embeddings using Bedrock
+    embeddings = BedrockEmbeddings(
+        model_id="amazon.titan-embed-text-v1",
+        region_name="us-east-1"
+    )
+    
+    # Create vector store
+    vectorstore = FAISS.from_documents(documents, embeddings)
+    
+    # Create retriever tool
+    from langchain.tools.retriever import create_retriever_tool
+    retriever_tool = create_retriever_tool(
+        vectorstore.as_retriever(search_kwargs={"k": 3}),
+        "search_project_docs",
+        "Search through project documentation to find relevant information"
+    )
     
     research_agent = Agent(
         role="Data Researcher",
         goal="Search through project documents to find relevant information",
-        backstory="You use vector search to find semantically similar content in the project knowledge base.",
+        backstory="You search the project knowledge base using semantic similarity.",
         llm="bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0",
-        tools=[vector_search],
+        tools=[retriever_tool],
         verbose=True,
         allow_delegation=False
     )
