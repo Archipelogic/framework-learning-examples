@@ -82,29 +82,31 @@ def create_specialized_agents(project_root: Path) -> tuple[Agent, Agent, Agent]:
     db = SQLDatabase.from_uri(f"sqlite:///{db_path}")
     
     # Wrap LangChain tools in CrewAI BaseTool
+    # Create instances of LangChain tools first
+    lc_query_tool = LCQueryTool(db=db)
+    lc_info_tool = LCInfoTool(db=db)
+    lc_list_tool = LCListTool(db=db)
+    
     class QuerySQLTool(BaseTool):
         name: str = "Query SQL Database"
         description: str = "Execute SQL queries and return results"
-        lc_tool: LCQueryTool = Field(default_factory=lambda: LCQueryTool(db=db))
         
         def _run(self, query: str) -> str:
-            return self.lc_tool.run(query)
+            return lc_query_tool.run(query)
     
     class InfoSQLTool(BaseTool):
         name: str = "Get SQL Table Info"
         description: str = "Get information about database tables and schema"
-        lc_tool: LCInfoTool = Field(default_factory=lambda: LCInfoTool(db=db))
         
         def _run(self, table_names: str = "") -> str:
-            return self.lc_tool.run(table_names)
+            return lc_info_tool.run(table_names)
     
     class ListSQLTool(BaseTool):
         name: str = "List SQL Tables"
         description: str = "List all available tables in the database"
-        lc_tool: LCListTool = Field(default_factory=lambda: LCListTool(db=db))
         
         def _run(self, tool_input: str = "") -> str:
-            return self.lc_tool.run(tool_input)
+            return lc_list_tool.run(tool_input)
     
     database_agent = Agent(
         role="Database Analyst",
