@@ -54,7 +54,7 @@ import boto3
 from langchain_community.vectorstores import FAISS
 from langchain_aws import BedrockEmbeddings
 from langchain_core.documents import Document
-from langchain.tools.retriever import create_retriever_tool
+from langchain_core.tools import create_retriever_tool
 
 
 # ============================================================
