@@ -22,14 +22,21 @@ os.environ["AWS_REGION"] = "us-east-1"
 
 import phoenix as px
 from phoenix.otel import register
+from openinference.instrumentation.bedrock import BedrockInstrumentor
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent, RunContext
-from pydantic_ai.models.bedrock import BedrockModel
+from pydantic_ai.models.bedrock import BedrockConverseModel
 from langchain_community.utilities import SQLDatabase
 from langchain_community.tools.sql_database.tool import (
     InfoSQLDatabaseTool,
     QuerySQLDatabaseTool
 )
+
+
+# Launch Phoenix and setup Bedrock tracing (align with crewai_unified)
+session = px.launch_app()
+tracer_provider = register(endpoint="http://localhost:6006/v1/traces")
+BedrockInstrumentor().instrument(tracer_provider=tracer_provider)
 
 
 # ============================================================
@@ -157,9 +164,8 @@ def run_orchestration(user_prompt: str, project_root: Path) -> str:
     print("PYDANTIC AI ORCHESTRATION")
     print("=" * 60)
     
-    model = BedrockModel(
-        model_id="us.anthropic.claude-sonnet-4-5-20250929-v1:0",
-        region_name="us-east-1"
+    model = BedrockConverseModel(
+        "us.anthropic.claude-sonnet-4-5-20250929-v1:0"
     )
     
     # Create minimal set of specialized agents (only 3!)
@@ -233,15 +239,9 @@ def run_orchestration(user_prompt: str, project_root: Path) -> str:
 def main():
     """Main entry point"""
     # ============================================================
-    # OBSERVABILITY SETUP
+    # OBSERVABILITY SETUP (Phoenix already launched at module level)
     # ============================================================
-    session = px.launch_app()
     print(f"Phoenix UI: {session.url}")
-    
-    tracer_provider = register(
-        project_name="pydantic-ai-orchestrator",
-        endpoint="http://localhost:6006/v1/traces"
-    )
     
     # ============================================================
     # GET USER PROMPT
