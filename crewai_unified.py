@@ -29,27 +29,11 @@ os.environ["OTEL_EXPORTER_OTLP_INSECURE"] = "true"
 import phoenix as px
 from phoenix.otel import register
 from openinference.instrumentation.bedrock import BedrockInstrumentor
-import time
-import webbrowser
 
-# Launch Phoenix for observability
+# Launch Phoenix and setup tracing (like teammate's implementation)
 session = px.launch_app()
-phoenix_url = session.url
-print(f"\n🔥 Phoenix UI: {phoenix_url}")
-print("📊 Opening Phoenix in your browser...\n")
-
-# Give Phoenix time to fully start
-time.sleep(3)
-webbrowser.open(phoenix_url)
-
-# Setup Phoenix tracing - instrument Bedrock (the LLM provider)
-print("🔧 Setting up Phoenix tracing...")
-tracer_provider = register(
-    project_name="crewai-orchestrator",
-    endpoint="http://localhost:6006/v1/traces"
-)
+tracer_provider = register(endpoint="http://localhost:6006/v1/traces")
 BedrockInstrumentor().instrument(tracer_provider=tracer_provider)
-print("✅ Phoenix tracing ready (Bedrock instrumented)\n")
 
 # Import CrewAI after instrumentation
 from crewai import Agent, Task, Crew, Process
@@ -283,6 +267,7 @@ def main():
     print("\n" + "=" * 60)
     print("CREWAI UNIFIED ORCHESTRATOR")
     print("=" * 60)
+    print(f"Phoenix UI: {session.url}")
     print(f"Prompt: {user_prompt}")
     
     project_root = Path(__file__).parent
