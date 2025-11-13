@@ -102,17 +102,20 @@ def create_specialized_agents(project_root: Path) -> tuple[Agent, Agent, Agent]:
         allow_delegation=False
     )
     
-    # 2. Data Research Agent (with RAG tool)
-    data_dir = project_root / 'data' / 'projects'
-    rag_tool = RagTool()
-    rag_tool.add(data_type="directory", path=str(data_dir))
+    # 2. Data Research Agent (with custom vector search tool)
+    # Import custom vector search tool that loads from pre-computed embeddings
+    import sys
+    sys.path.insert(0, str(project_root))
+    from vector_search_tool import VectorSearchTool
+    
+    vector_search = VectorSearchTool()
     
     research_agent = Agent(
         role="Data Researcher",
-        goal="Search through files and documents to find information",
-        backstory="You use RAG tools to search through documents and extract relevant information.",
+        goal="Search through project documents to find relevant information",
+        backstory="You use vector search to find semantically similar content in the project knowledge base.",
         llm="bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0",
-        tools=[rag_tool],
+        tools=[vector_search],
         verbose=True,
         allow_delegation=False
     )
