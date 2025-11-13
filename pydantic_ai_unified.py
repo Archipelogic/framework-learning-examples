@@ -66,28 +66,26 @@ class OrchestratorDeps(BaseModel):
 # ============================================================
 # SPECIALIZED AGENTS (Minimal Set)
 # ============================================================
-def create_reasoning_agent(model: BedrockModel) -> Agent:
+def create_reasoning_agent(model: BedrockConverseModel) -> Agent:
     """
     Create general reasoning agent (no tools).
     Handles calculations, puzzles, riddles, and any logical reasoning task.
     """
-    return Agent(
+    return Agent[GenericResult](
         model=model,
-        result_type=GenericResult,
         system_prompt="""You excel at reasoning, calculations, puzzles, and problem-solving.
         You can handle time calculations, mathematical problems, riddles, multi-step reasoning,
         and any task that requires logical thinking. Show your reasoning step by step."""
     )
 
 
-def create_research_agent(model: BedrockModel, data_dir: Path) -> Agent:
+def create_research_agent(model: BedrockConverseModel, data_dir: Path) -> Agent:
     """
     Create data research agent (with file reading tools).
     Handles searching through files and documents.
     """
-    agent = Agent(
+    agent = Agent[GenericResult](
         model=model,
-        result_type=GenericResult,
         system_prompt=f"You search through files to find information. Files are located in: {data_dir}",
         deps_type=Path
     )
@@ -134,7 +132,7 @@ def create_research_agent(model: BedrockModel, data_dir: Path) -> Agent:
     return agent
 
 
-def create_database_agent(model: BedrockModel, db_path: Path) -> Agent:
+def create_database_agent(model: BedrockConverseModel, db_path: Path) -> Agent:
     """
     Create database agent (with SQL tools).
     Handles querying databases and structured data.
@@ -144,9 +142,8 @@ def create_database_agent(model: BedrockModel, db_path: Path) -> Agent:
     schema_tool = InfoSQLDatabaseTool(db=db)
     query_tool = QuerySQLDatabaseTool(db=db)
     
-    return Agent(
+    return Agent[SQLResult](
         model=model,
-        result_type=SQLResult,
         system_prompt="You query databases using SQL and format results as JSON.",
         tools=[schema_tool, query_tool]
     )
@@ -175,9 +172,8 @@ def run_orchestration(user_prompt: str, project_root: Path) -> str:
     
     # Create orchestration agent with all specialists as tools
     # Each specialist is exposed as a callable tool that the orchestrator can invoke
-    orchestrator = Agent(
+    orchestrator = Agent[str](
         model=model,
-        result_type=str,
         system_prompt="""You are a master orchestrator with access to specialized agents.
         Analyze the user's request and call the appropriate specialist:
         
