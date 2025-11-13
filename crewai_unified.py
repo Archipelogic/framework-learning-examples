@@ -29,14 +29,17 @@ import phoenix as px
 from phoenix.otel import register
 from openinference.instrumentation.crewai import CrewAIInstrumentor
 import time
+import webbrowser
 
 # Launch Phoenix for observability
 session = px.launch_app()
-print(f"\n🔥 Phoenix UI: {session.url}")
-print("📊 View traces and spans at the URL above\n")
+phoenix_url = session.url
+print(f"\n🔥 Phoenix UI: {phoenix_url}")
+print("📊 Opening Phoenix in your browser...\n")
 
-# Give Phoenix a moment to fully start before registering tracer
-time.sleep(2)
+# Give Phoenix time to fully start, then open browser
+time.sleep(3)
+webbrowser.open(phoenix_url)
 from crewai import Agent, Task, Crew, Process
 from crewai.tools import BaseTool
 from crewai_tools import RagTool
