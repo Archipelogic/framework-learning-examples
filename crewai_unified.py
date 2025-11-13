@@ -36,18 +36,9 @@ print("📊 Opening Phoenix in your browser...\n")
 
 # Give Phoenix time to fully start
 time.sleep(3)
-
-# Register tracer and instrument BEFORE importing CrewAI
-tracer_provider = register(
-    project_name="crewai-orchestrator",
-    endpoint="http://localhost:6006/v1/traces"
-)
-CrewAIInstrumentor().instrument(tracer_provider=tracer_provider)
-
-# Open browser after instrumentation is set up
 webbrowser.open(phoenix_url)
 
-# Now import CrewAI - instrumentation will capture everything
+# Import CrewAI FIRST
 from crewai import Agent, Task, Crew, Process
 from crewai.tools import BaseTool
 from crewai_tools import RagTool
@@ -223,7 +214,16 @@ def run_orchestration(user_prompt: str, project_root: Path) -> str:
 
 def main():
     """Main entry point"""
-    # Phoenix and instrumentation already set up at module level
+    # ============================================================
+    # SETUP PHOENIX TRACING
+    # ============================================================
+    # Register with auto_instrument and then manually instrument CrewAI
+    tracer_provider = register(
+        project_name="crewai-orchestrator",
+        endpoint="http://localhost:6006/v1/traces",
+        auto_instrument=True
+    )
+    CrewAIInstrumentor().instrument(skip_dep_check=True, tracer_provider=tracer_provider)
     
     # ============================================================
     # GET USER PROMPT
