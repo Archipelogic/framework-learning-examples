@@ -19,8 +19,8 @@ An orchestration agent analyzes prompts and delegates to the appropriate special
 
 ```
 framework-learning-examples/
-├── crewai.py            # Unified CrewAI with hierarchical orchestration
-├── pydantic_ai.py       # Unified Pydantic AI with tool-based orchestration
+├── crewai_unified.py    # Unified CrewAI with hierarchical orchestration
+├── pydantic_ai_unified.py  # Unified Pydantic AI with tool-based orchestration
 ├── tasks/               # Task configurations (single source of truth)
 │   ├── austin.yaml      # Time calculation task - name, description, prompt
 │   ├── statefarm.yaml   # Jingle puzzle task - name, description, prompt
@@ -145,16 +145,16 @@ This launches an interactive menu where you can:
 
 ```bash
 # CrewAI - orchestration agent will analyze and delegate
-uv run python crewai.py "What is the current time in Austin?"
+uv run python crewai_unified.py "What is the current time in Austin?"
 
 # Pydantic AI - orchestration agent will select appropriate tool
-uv run python pydantic_ai.py "How many police reports in 2024?"
+uv run python pydantic_ai_unified.py "How many police reports in 2024?"
 
 # File search example
-uv run python crewai.py "Which model was used in the Attorney Demand Classification project?"
+uv run python crewai_unified.py "Which model was used in the Attorney Demand Classification project?"
 
 # Puzzle example
-uv run python pydantic_ai.py "Take the 5th letter in the State Farm jingle and multiply by 10"
+uv run python pydantic_ai_unified.py "Take the 5th letter in the State Farm jingle and multiply by 10"
 ```
 
 The orchestration agent automatically determines which specialist to use - no manual task selection needed!

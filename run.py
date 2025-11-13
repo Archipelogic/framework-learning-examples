@@ -12,8 +12,8 @@ import yaml
 
 # Unified framework scripts
 FRAMEWORKS = {
-    "CrewAI": "crewai.py",
-    "Pydantic AI": "pydantic_ai.py"
+    "CrewAI": "crewai_unified.py",
+    "Pydantic AI": "pydantic_ai_unified.py"
 }
 
 
