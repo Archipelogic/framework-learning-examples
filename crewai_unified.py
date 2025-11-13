@@ -112,8 +112,10 @@ def create_specialized_agents(project_root: Path) -> tuple[Agent, Agent, Agent]:
     )
     
     # Create FAISS index from pre-computed embeddings
+    # embedding_vectors is shape (n, embedding_dim), need to pass list of (text, vector) tuples
+    text_embedding_pairs = [(doc.page_content, embedding_vectors[i].tolist()) for i, doc in enumerate(documents)]
     vectorstore = FAISS.from_embeddings(
-        text_embeddings=list(zip([doc.page_content for doc in documents], embedding_vectors)),
+        text_embeddings=text_embedding_pairs,
         embedding=bedrock_embeddings,
         metadatas=[doc.metadata for doc in documents]
     )
