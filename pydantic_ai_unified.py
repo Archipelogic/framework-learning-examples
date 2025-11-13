@@ -22,7 +22,6 @@ os.environ["AWS_REGION"] = "us-east-1"
 
 import phoenix as px
 from phoenix.otel import register
-from openinference.instrumentation.pydantic_ai import PydanticAIInstrumentor
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent, RunContext
 from pydantic_ai.models.bedrock import BedrockModel
@@ -243,8 +242,6 @@ def main():
         project_name="pydantic-ai-orchestrator",
         endpoint="http://localhost:6006/v1/traces"
     )
-    
-    PydanticAIInstrumentor().instrument(tracer_provider=tracer_provider)
     
     # ============================================================
     # GET USER PROMPT
