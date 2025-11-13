@@ -28,13 +28,15 @@ import phoenix as px
 from phoenix.otel import register
 from openinference.instrumentation.crewai import CrewAIInstrumentor
 from crewai import Agent, Task, Crew, Process
+from crewai.tools import BaseTool
 from crewai_tools import RagTool
 from langchain_community.utilities import SQLDatabase
 from langchain_community.tools.sql_database.tool import (
-    InfoSQLDatabaseTool,
-    ListSQLDatabaseTool,
-    QuerySQLDatabaseTool,
+    InfoSQLDatabaseTool as LCInfoTool,
+    ListSQLDatabaseTool as LCListTool,
+    QuerySQLDatabaseTool as LCQueryTool,
 )
+from pydantic import Field
 
 
 # ============================================================
@@ -75,20 +77,41 @@ def create_specialized_agents(project_root: Path) -> tuple[Agent, Agent, Agent]:
         allow_delegation=False
     )
     
-    # 3. Database Agent (with SQL tools)
+    # 3. Database Agent (with SQL tools wrapped in BaseTool)
     db_path = project_root / 'data' / 'doc.csv'
     db = SQLDatabase.from_uri(f"sqlite:///{db_path}")
     
-    query_tool = QuerySQLDatabaseTool(db=db)
-    info_tool = InfoSQLDatabaseTool(db=db)
-    list_tool = ListSQLDatabaseTool(db=db)
+    # Wrap LangChain tools in CrewAI BaseTool
+    class QuerySQLTool(BaseTool):
+        name: str = "Query SQL Database"
+        description: str = "Execute SQL queries and return results"
+        lc_tool: LCQueryTool = Field(default_factory=lambda: LCQueryTool(db=db))
+        
+        def _run(self, query: str) -> str:
+            return self.lc_tool.run(query)
+    
+    class InfoSQLTool(BaseTool):
+        name: str = "Get SQL Table Info"
+        description: str = "Get information about database tables and schema"
+        lc_tool: LCInfoTool = Field(default_factory=lambda: LCInfoTool(db=db))
+        
+        def _run(self, table_names: str = "") -> str:
+            return self.lc_tool.run(table_names)
+    
+    class ListSQLTool(BaseTool):
+        name: str = "List SQL Tables"
+        description: str = "List all available tables in the database"
+        lc_tool: LCListTool = Field(default_factory=lambda: LCListTool(db=db))
+        
+        def _run(self, tool_input: str = "") -> str:
+            return self.lc_tool.run(tool_input)
     
     database_agent = Agent(
         role="Database Analyst",
         goal="Query databases to answer questions",
         backstory="You use SQL tools to query databases and format results.",
         llm="bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0",
-        tools=[list_tool, info_tool, query_tool],
+        tools=[ListSQLTool(), InfoSQLTool(), QuerySQLTool()],
         verbose=True,
         allow_delegation=False
     )
