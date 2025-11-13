@@ -19,10 +19,10 @@ import sys
 from pathlib import Path
 
 # MUST set these BEFORE importing CrewAI
-os.environ["OTEL_SDK_DISABLED"] = "true"
+# Note: OTEL_SDK_DISABLED must NOT be set - we need OpenTelemetry for Phoenix tracing
 os.environ["OPENAI_API_KEY"] = "sk-fake-key-for-bedrock"
-os.environ["CREWAI_TELEMETRY_ENABLED"] = "false"
-os.environ["CREWAI_DISABLE_TELEMETRY"] = "true"
+os.environ["CREWAI_TELEMETRY_ENABLED"] = "false"  # Disable CrewAI's own telemetry
+os.environ["CREWAI_DISABLE_TELEMETRY"] = "true"   # But keep OpenTelemetry for Phoenix
 os.environ["AWS_REGION"] = "us-east-1"
 
 import phoenix as px
