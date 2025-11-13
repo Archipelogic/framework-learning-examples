@@ -91,8 +91,14 @@ metadata_file = Path(__file__).parent / 'data' / 'metadata.json'
 bedrock_client = boto3.client('bedrock-runtime', region_name='us-east-1')
 embedding_function = get_embedding_for_vectordb(bedrock_client, embedding_model_id)
 
-# Create vectorstore
-vectorstore = create_langchain_faiss_vectorstore(text_embeddings_file, metadata_file, embedding_function)
+# Create vectorstore (or None if files don't exist)
+try:
+    vectorstore = create_langchain_faiss_vectorstore(text_embeddings_file, metadata_file, embedding_function)
+    print(f"✅ Loaded vectorstore with {vectorstore.index.ntotal} vectors")
+except FileNotFoundError as e:
+    print(f"⚠️  Warning: Embedding files not found. Copy text_embeddings.json and metadata.json to data/ directory.")
+    print(f"   RAG tool will not work until files are present.")
+    vectorstore = None
 
 
 # ============================================================
@@ -136,16 +142,25 @@ def create_specialized_agents(project_root: Path) -> tuple[Agent, Agent, Agent]:
     from pydantic import BaseModel
     
     class SearchInput(BaseModel):
-        query: str = Field(description="The search query to find relevant documents")
+        query: str = Field(description="Search query")
     
     class VectorSearchTool(BaseTool):
         name: str = "search_project_docs"
-        description: str = "Search project documentation using semantic similarity. Input should be a search query string."
+        description: str = "Search project documentation. Provide a search query as input."
         args_schema: type[BaseModel] = SearchInput
         
-        def _run(self, query: str) -> str:
-            docs = vectorstore.similarity_search(query, k=3)
-            return "\n\n".join([doc.page_content for doc in docs])
+        def _run(self, query: str = "") -> str:
+            try:
+                if vectorstore is None:
+                    return "Error: Vectorstore not loaded. Embedding files (text_embeddings.json, metadata.json) must be in data/ directory."
+                if not query:
+                    return "Error: No search query provided"
+                docs = vectorstore.similarity_search(query, k=3)
+                if not docs:
+                    return "No relevant documents found"
+                return "\n\n---\n\n".join([doc.page_content for doc in docs])
+            except Exception as e:
+                return f"Error searching documents: {str(e)}"
     
     retriever_tool = VectorSearchTool()
     
