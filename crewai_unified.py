@@ -28,8 +28,7 @@ os.environ["OTEL_EXPORTER_OTLP_INSECURE"] = "true"
 
 import phoenix as px
 from phoenix.otel import register
-from openinference.instrumentation.crewai import CrewAIInstrumentor
-from openinference.instrumentation.langchain import LangChainInstrumentor
+from openinference.instrumentation.bedrock import BedrockInstrumentor
 import time
 import webbrowser
 
@@ -43,7 +42,16 @@ print("📊 Opening Phoenix in your browser...\n")
 time.sleep(3)
 webbrowser.open(phoenix_url)
 
-# Import CrewAI FIRST
+# Setup Phoenix tracing - instrument Bedrock (the LLM provider)
+print("🔧 Setting up Phoenix tracing...")
+tracer_provider = register(
+    project_name="crewai-orchestrator",
+    endpoint="http://localhost:6006/v1/traces"
+)
+BedrockInstrumentor().instrument(tracer_provider=tracer_provider)
+print("✅ Phoenix tracing ready (Bedrock instrumented)\n")
+
+# Import CrewAI after instrumentation
 from crewai import Agent, Task, Crew, Process
 from crewai.tools import BaseTool
 from crewai_tools import RagTool
@@ -56,18 +64,6 @@ from langchain_community.tools.sql_database.tool import (
 from pydantic import Field
 from datetime import datetime
 import pytz
-
-# ============================================================
-# SETUP PHOENIX TRACING - MUST BE BEFORE CREATING ANY CREWS
-# ============================================================
-print("🔧 Setting up Phoenix tracing...")
-tracer_provider = register(
-    project_name="crewai-orchestrator",
-    endpoint="http://localhost:6006/v1/traces"
-)
-CrewAIInstrumentor().instrument(skip_dep_check=True, tracer_provider=tracer_provider)
-LangChainInstrumentor().instrument(tracer_provider=tracer_provider)
-print("✅ Phoenix tracing ready\n")
 
 
 # ============================================================
