@@ -31,7 +31,7 @@ def create_sql_database():
     os.makedirs("data", exist_ok=True)
     
     # Remove existing database file
-    db_file = "data/doc.csv"
+    db_file = "data/doc.db"
     if os.path.exists(db_file):
         os.remove(db_file)
     

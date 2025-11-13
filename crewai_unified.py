@@ -122,7 +122,7 @@ def create_specialized_agents(project_root: Path) -> tuple[Agent, Agent, Agent]:
     )
     
     # 3. Database Agent (with SQL tools wrapped in BaseTool)
-    db_path = project_root / 'data' / 'doc.csv'
+    db_path = project_root / 'data' / 'doc.db'
     db = SQLDatabase.from_uri(f"sqlite:///{db_path}")
     
     # Wrap LangChain tools in CrewAI BaseTool

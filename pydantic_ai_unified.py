@@ -166,7 +166,7 @@ def run_orchestration(user_prompt: str, project_root: Path) -> str:
     # Create minimal set of specialized agents (only 3!)
     reasoning_agent = create_reasoning_agent(model)
     research_agent = create_research_agent(model, project_root / 'data' / 'projects')
-    database_agent = create_database_agent(model, project_root / 'data' / 'doc.csv')
+    database_agent = create_database_agent(model, project_root / 'data' / 'doc.db')
     
     # Create orchestration agent with all specialists as tools
     # Each specialist is exposed as a callable tool that the orchestrator can invoke
