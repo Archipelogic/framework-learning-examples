@@ -214,7 +214,7 @@ def run_orchestration(user_prompt: str, project_root: Path) -> str:
         """
         print("\n→ Delegating to Reasoning Specialist")
         result = reasoning_agent.run_sync(task)
-        return f"{result.data.answer}\n\nReasoning:\n{result.data.reasoning}"
+        return f"{result.output.answer}\n\nReasoning:\n{result.output.reasoning}"
     
     @orchestrator.tool
     def call_data_researcher(ctx: RunContext[OrchestratorDeps], task: str) -> str:
@@ -226,7 +226,7 @@ def run_orchestration(user_prompt: str, project_root: Path) -> str:
         print("\n→ Delegating to Data Researcher")
         data_dir = ctx.deps.project_root / 'data' / 'projects'
         result = research_agent.run_sync(task, deps=data_dir)
-        return f"{result.data.answer}\n\nReasoning:\n{result.data.reasoning}"
+        return f"{result.output.answer}\n\nReasoning:\n{result.output.reasoning}"
     
     @orchestrator.tool
     def call_database_analyst(ctx: RunContext[OrchestratorDeps], task: str) -> str:
@@ -237,7 +237,7 @@ def run_orchestration(user_prompt: str, project_root: Path) -> str:
         """
         print("\n→ Delegating to Database Analyst")
         result = database_agent.run_sync(task)
-        return f"Query Executed:\n{result.data.query_executed}\n\nResults:\n{json.dumps(result.data.results, indent=2)}"
+        return f"Query Executed:\n{result.output.query_executed}\n\nResults:\n{json.dumps(result.output.results, indent=2)}"
     
     # Run orchestration - agent will analyze prompt and call appropriate tool
     deps = OrchestratorDeps(project_root=project_root, user_prompt=user_prompt)
