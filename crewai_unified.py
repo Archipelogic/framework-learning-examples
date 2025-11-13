@@ -19,10 +19,7 @@ import sys
 from pathlib import Path
 
 # MUST set these BEFORE importing CrewAI
-# Note: OTEL_SDK_DISABLED must NOT be set - we need OpenTelemetry for Phoenix tracing
 os.environ["OPENAI_API_KEY"] = "sk-fake-key-for-bedrock"
-os.environ["CREWAI_TELEMETRY_ENABLED"] = "false"  # Disable CrewAI's own telemetry
-os.environ["CREWAI_DISABLE_TELEMETRY"] = "true"   # But keep OpenTelemetry for Phoenix
 os.environ["AWS_REGION"] = "us-east-1"
 
 import phoenix as px
@@ -37,9 +34,20 @@ phoenix_url = session.url
 print(f"\n🔥 Phoenix UI: {phoenix_url}")
 print("📊 Opening Phoenix in your browser...\n")
 
-# Give Phoenix time to fully start, then open browser
+# Give Phoenix time to fully start
 time.sleep(3)
+
+# Register tracer and instrument BEFORE importing CrewAI
+tracer_provider = register(
+    project_name="crewai-orchestrator",
+    endpoint="http://localhost:6006/v1/traces"
+)
+CrewAIInstrumentor().instrument(tracer_provider=tracer_provider)
+
+# Open browser after instrumentation is set up
 webbrowser.open(phoenix_url)
+
+# Now import CrewAI - instrumentation will capture everything
 from crewai import Agent, Task, Crew, Process
 from crewai.tools import BaseTool
 from crewai_tools import RagTool
@@ -215,16 +223,7 @@ def run_orchestration(user_prompt: str, project_root: Path) -> str:
 
 def main():
     """Main entry point"""
-    # ============================================================
-    # OBSERVABILITY SETUP
-    # ============================================================
-    # Phoenix already launched at module level, just register tracer
-    tracer_provider = register(
-        project_name="crewai-orchestrator",
-        endpoint="http://localhost:6006/v1/traces"
-    )
-    
-    CrewAIInstrumentor().instrument(tracer_provider=tracer_provider)
+    # Phoenix and instrumentation already set up at module level
     
     # ============================================================
     # GET USER PROMPT
