@@ -16,6 +16,8 @@ NO if/then logic - the agent decides everything through tool selection.
 import os
 import sys
 import json
+from datetime import datetime
+import pytz
 from pathlib import Path
 
 os.environ["AWS_REGION"] = "us-east-1"
@@ -67,13 +69,25 @@ class OrchestratorDeps(BaseModel):
 # SPECIALIZED AGENTS (Minimal Set)
 # ============================================================
 def create_reasoning_agent(model: BedrockConverseModel) -> Agent:
-    """General reasoning agent (no tools)."""
-    return Agent(
+    """General reasoning agent (with time tool)."""
+    agent = Agent(
         model=model,
         system_prompt="""You excel at reasoning, calculations, puzzles, and problem-solving.
         You can handle time calculations, mathematical problems, riddles, multi-step reasoning,
         and any task that requires logical thinking. Show your reasoning step by step."""
     )
+
+    @agent.tool
+    def get_current_time(ctx: RunContext[None], timezone: str = "UTC") -> str:
+        """Get the current time in a specific timezone like 'America/Chicago' or 'UTC'."""
+        try:
+            tz = pytz.timezone(timezone)
+            current_time = datetime.now(tz)
+            return f"Current time in {timezone}: {current_time.strftime('%Y-%m-%d %H:%M:%S %Z')}"
+        except Exception as e:
+            return f"Error getting time: {str(e)}"
+
+    return agent
 
 
 def create_research_agent(model: BedrockConverseModel, data_dir: Path) -> Agent:
