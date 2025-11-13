@@ -25,6 +25,7 @@ os.environ["AWS_REGION"] = "us-east-1"
 import phoenix as px
 from phoenix.otel import register
 from openinference.instrumentation.crewai import CrewAIInstrumentor
+from openinference.instrumentation.langchain import LangChainInstrumentor
 import time
 import webbrowser
 
@@ -217,13 +218,16 @@ def main():
     # ============================================================
     # SETUP PHOENIX TRACING
     # ============================================================
-    # Register with auto_instrument and then manually instrument CrewAI
+    # Register with auto_instrument and then manually instrument CrewAI and LangChain
     tracer_provider = register(
         project_name="crewai-orchestrator",
         endpoint="http://localhost:6006/v1/traces",
         auto_instrument=True
     )
+    # Instrument CrewAI for agent/task tracing
     CrewAIInstrumentor().instrument(skip_dep_check=True, tracer_provider=tracer_provider)
+    # Instrument LangChain for LLM call tracing (CrewAI < 0.63.0 uses LangChain)
+    LangChainInstrumentor().instrument(tracer_provider=tracer_provider)
     
     # ============================================================
     # GET USER PROMPT
