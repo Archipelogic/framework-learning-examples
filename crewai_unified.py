@@ -139,25 +139,25 @@ def create_specialized_agents(project_root: Path) -> tuple[Agent, Agent, Agent]:
     
     # 2. Data Research Agent (use module-level vectorstore)
     # Create retriever tool using BaseTool
-    from pydantic import BaseModel
-    
-    class SearchInput(BaseModel):
-        query: str = Field(description="Search query")
-    
     class VectorSearchTool(BaseTool):
         name: str = "search_project_docs"
-        description: str = "Search project documentation. Provide a search query as input."
-        args_schema: type[BaseModel] = SearchInput
+        description: str = "Search project documentation using semantic similarity. Input: search query string."
         
-        def _run(self, query: str = "") -> str:
+        def _run(self, **kwargs) -> str:
             try:
                 if vectorstore is None:
-                    return "Error: Vectorstore not loaded. Embedding files (text_embeddings.json, metadata.json) must be in data/ directory."
-                if not query:
-                    return "Error: No search query provided"
+                    return "Error: Vectorstore not loaded. Embedding files must be in data/ directory."
+                
+                # Extract query from kwargs
+                query = kwargs.get('query', '') or kwargs.get('input', '') or str(kwargs) if kwargs else ''
+                
+                if not query or query == '{}':
+                    return "Error: No search query provided. Please provide a search query."
+                
                 docs = vectorstore.similarity_search(query, k=3)
                 if not docs:
-                    return "No relevant documents found"
+                    return "No relevant documents found for your query."
+                
                 return "\n\n---\n\n".join([doc.page_content for doc in docs])
             except Exception as e:
                 return f"Error searching documents: {str(e)}"
