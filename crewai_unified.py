@@ -54,7 +54,6 @@ import boto3
 from langchain_community.vectorstores import FAISS
 from langchain_aws import BedrockEmbeddings
 from langchain_core.documents import Document
-from langchain_core.tools import create_retriever_tool
 
 
 # ============================================================
@@ -119,12 +118,16 @@ def create_specialized_agents(project_root: Path) -> tuple[Agent, Agent, Agent]:
         metadatas=[doc.metadata for doc in documents]
     )
     
-    # Create retriever tool
-    retriever_tool = create_retriever_tool(
-        vectorstore.as_retriever(search_kwargs={"k": 3}),
-        "search_project_docs",
-        "Search project documentation using semantic similarity"
-    )
+    # Create retriever tool using BaseTool
+    class VectorSearchTool(BaseTool):
+        name: str = "search_project_docs"
+        description: str = "Search project documentation using semantic similarity"
+        
+        def _run(self, query: str) -> str:
+            docs = vectorstore.similarity_search(query, k=3)
+            return "\n\n".join([doc.page_content for doc in docs])
+    
+    retriever_tool = VectorSearchTool()
     
     research_agent = Agent(
         role="Data Researcher",
