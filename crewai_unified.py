@@ -64,6 +64,13 @@ from langchain_community.tools.sql_database.tool import (
 from pydantic import Field
 from datetime import datetime
 import pytz
+import json
+import numpy as np
+import boto3
+from langchain_community.vectorstores import FAISS
+from langchain_aws import BedrockEmbeddings
+from langchain_core.documents import Document
+from langchain.tools.retriever import create_retriever_tool
 
 
 # ============================================================
@@ -103,12 +110,6 @@ def create_specialized_agents(project_root: Path) -> tuple[Agent, Agent, Agent]:
     )
     
     # 2. Data Research Agent (load pre-computed embeddings like teammate)
-    from langchain_community.vectorstores import FAISS
-    from langchain_aws import BedrockEmbeddings
-    from langchain_core.documents import Document
-    import json
-    import numpy as np
-    
     # Load pre-computed embeddings and metadata
     embeddings_file = project_root / 'data' / 'text_embeddings.json'
     metadata_file = project_root / 'data' / 'metadata.json'
@@ -135,7 +136,6 @@ def create_specialized_agents(project_root: Path) -> tuple[Agent, Agent, Agent]:
     )
     
     # Create retriever tool
-    from langchain.tools.retriever import create_retriever_tool
     retriever_tool = create_retriever_tool(
         vectorstore.as_retriever(search_kwargs={"k": 3}),
         "search_project_docs",
