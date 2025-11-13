@@ -133,9 +133,15 @@ def create_specialized_agents(project_root: Path) -> tuple[Agent, Agent, Agent]:
     
     # 2. Data Research Agent (use module-level vectorstore)
     # Create retriever tool using BaseTool
+    from pydantic import BaseModel
+    
+    class SearchInput(BaseModel):
+        query: str = Field(description="The search query to find relevant documents")
+    
     class VectorSearchTool(BaseTool):
         name: str = "search_project_docs"
-        description: str = "Search project documentation using semantic similarity"
+        description: str = "Search project documentation using semantic similarity. Input should be a search query string."
+        args_schema: type[BaseModel] = SearchInput
         
         def _run(self, query: str) -> str:
             docs = vectorstore.similarity_search(query, k=3)
