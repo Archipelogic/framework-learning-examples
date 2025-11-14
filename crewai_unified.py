@@ -38,7 +38,7 @@ BedrockInstrumentor().instrument(tracer_provider=tracer_provider)
 # Import CrewAI after instrumentation
 from crewai import Agent, Task, Crew, Process
 from crewai.tools import BaseTool
-from crewai_tools import JSONSearchTool
+from crewai_tools import RagTool
 from langchain_community.utilities import SQLDatabase
 from langchain_community.tools.sql_database.tool import (
     InfoSQLDatabaseTool as LCInfoTool,
@@ -46,59 +46,7 @@ from langchain_community.tools.sql_database.tool import (
     QuerySQLDatabaseTool as LCQueryTool,
 )
 from pydantic import Field
-from datetime import datetime
-import pytz
 import json
-import numpy as np
-import boto3
-from langchain_community.vectorstores import FAISS
-from langchain_community.vectorstores.utils import DistanceStrategy
-from langchain_aws import BedrockEmbeddings
-from langchain_core.documents import Document
-
-
-# ============================================================
-# VECTORSTORE SETUP (Module Level - like teammate's implementation)
-# ============================================================
-def create_langchain_faiss_vectorstore(text_embeddings_path, metadata_path, embedding_function):
-    """Create FAISS vectorstore from pre-computed embeddings"""
-    text_embeddings = json.load(open(text_embeddings_path))
-    text_embeddings = [(text, np.array(vec)) for text, vec in text_embeddings]
-    metadata_list = json.load(open(metadata_path))
-    
-    vectorstore = FAISS.from_embeddings(
-        text_embeddings=text_embeddings,
-        embedding=embedding_function,
-        metadatas=metadata_list,
-        distance_strategy=DistanceStrategy.MAX_INNER_PRODUCT,
-        relevance_score_fn=lambda distance: (distance + 1.0) / 2.0
-    )
-    return vectorstore
-
-
-def get_embedding_for_vectordb(client, model_id):
-    """Get embedding function for vectorstore"""
-    embedding_function = BedrockEmbeddings(client=client, model_id=model_id)
-    return embedding_function.embed_query
-
-
-# Setup vectorstore at module level
-embedding_model_id = "amazon.titan-embed-text-v1"
-text_embeddings_file = Path(__file__).parent / 'data' / 'text_embeddings.json'
-metadata_file = Path(__file__).parent / 'data' / 'metadata.json'
-
-# Create bedrock client and embedding function
-bedrock_client = boto3.client('bedrock-runtime', region_name='us-east-1')
-embedding_function = get_embedding_for_vectordb(bedrock_client, embedding_model_id)
-
-# Create vectorstore (or None if files don't exist)
-try:
-    vectorstore = create_langchain_faiss_vectorstore(text_embeddings_file, metadata_file, embedding_function)
-    print(f"✅ Loaded vectorstore with {vectorstore.index.ntotal} vectors")
-except FileNotFoundError as e:
-    print(f"⚠️  Warning: Embedding files not found. Copy text_embeddings.json and metadata.json to data/ directory.")
-    print(f"   RAG tool will not work until files are present.")
-    vectorstore = None
 
 
 # ============================================================
@@ -112,64 +60,48 @@ def create_specialized_agents(project_root: Path) -> tuple[Agent, Agent, Agent]:
     3. Database Agent (SQL tools) - handles database queries
     """
     
-    # 1. General Reasoning Agent (with time tool - inject_date only gives date, not time)
-    class CurrentTimeTool(BaseTool):
-        name: str = "Get Current Time"
-        description: str = "Get the current time in a specific timezone. Input should be a timezone name like 'America/Chicago', 'America/New_York', or 'UTC'."
-        
-        def _run(self, timezone: str = "UTC") -> str:
-            try:
-                tz = pytz.timezone(timezone)
-                current_time = datetime.now(tz)
-                return f"Current time in {timezone}: {current_time.strftime('%Y-%m-%d %H:%M:%S %Z')}"
-            except Exception as e:
-                return f"Error getting time: {str(e)}"
-    
+    # 1. General Reasoning Agent (use native inject_date for time awareness)
     reasoning_agent = Agent(
         role="Reasoning Specialist",
         goal="Solve problems through logical reasoning and calculation",
         backstory="""You excel at reasoning, calculations, puzzles, and problem-solving.
         You can handle time calculations, mathematical problems, riddles, multi-step reasoning,
-        and any task that requires logical thinking. You have access to current time information.""",
+        and any task that requires logical thinking. You have access to current date and time information.""",
         llm="bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0",
-        tools=[CurrentTimeTool()],
+        inject_date=True,  # Native CrewAI time/date injection
         verbose=True,
         allow_delegation=False
     )
     
-    # 2. Data Research Agent (use module-level vectorstore)
-    # Create retriever tool using BaseTool
-    class VectorSearchTool(BaseTool):
-        name: str = "search_project_docs"
-        description: str = "Search project documentation using semantic similarity. Input: search query string."
-        
-        def _run(self, **kwargs) -> str:
-            try:
-                if vectorstore is None:
-                    return "Error: Vectorstore not loaded. Embedding files must be in data/ directory."
-                
-                # Extract query from kwargs
-                query = kwargs.get('query', '') or kwargs.get('input', '') or str(kwargs) if kwargs else ''
-                
-                if not query or query == '{}':
-                    return "Error: No search query provided. Please provide a search query."
-                
-                docs = vectorstore.similarity_search(query, k=3)
-                if not docs:
-                    return "No relevant documents found for your query."
-                
-                return "\n\n---\n\n".join([doc.page_content for doc in docs])
-            except Exception as e:
-                return f"Error searching documents: {str(e)}"
+    # 2. Data Research Agent (use native CrewAI RagTool)
+    rag_tool = RagTool()
     
-    retriever_tool = VectorSearchTool()
+    # Add embedding files as data sources
+    embeddings_file = project_root / 'data' / 'text_embeddings.json'
+    metadata_file = project_root / 'data' / 'metadata.json'
+    
+    if embeddings_file.exists() and metadata_file.exists():
+        # Load and add documents from embedding files
+        try:
+            embeddings_data = json.load(open(embeddings_file))
+            metadata_data = json.load(open(metadata_file))
+            
+            # Add each document to RagTool
+            for (text, _), meta in zip(embeddings_data, metadata_data):
+                rag_tool.add(data_type="text", content=text)
+            
+            print(f"✅ Loaded {len(embeddings_data)} documents into RagTool")
+        except Exception as e:
+            print(f"⚠️  Warning: Could not load embeddings into RagTool: {e}")
+    else:
+        print(f"⚠️  Warning: Embedding files not found. RagTool will have limited functionality.")
     
     research_agent = Agent(
         role="Data Researcher",
         goal="Search through project documents to find relevant information",
         backstory="You search the project knowledge base using semantic similarity.",
         llm="bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0",
-        tools=[retriever_tool],
+        tools=[rag_tool],
         verbose=True,
         allow_delegation=False
     )
