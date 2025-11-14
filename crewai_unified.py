@@ -38,14 +38,51 @@ BedrockInstrumentor().instrument(tracer_provider=tracer_provider)
 # Import CrewAI after instrumentation
 from crewai import Agent, Task, Crew, Process
 from crewai.tools import BaseTool
-from crewai_tools import RagTool
 from langchain_community.utilities import SQLDatabase
+from langchain_community.vectorstores import FAISS
+from langchain_community.vectorstores.utils import DistanceStrategy
+from langchain_aws import BedrockEmbeddings
+import numpy as np
+import boto3
 from langchain_community.tools.sql_database.tool import (
     InfoSQLDatabaseTool as LCInfoTool,
     ListSQLDatabaseTool as LCListTool,
     QuerySQLDatabaseTool as LCQueryTool,
 )
 import json
+
+
+# ============================================================
+# VECTORSTORE SETUP (Load pre-computed embeddings)
+# ============================================================
+# Note: RagTool doesn't work with pre-computed embeddings, so we use LangChain FAISS
+text_embeddings_file = Path(__file__).parent / 'data' / 'text_embeddings.json'
+metadata_file = Path(__file__).parent / 'data' / 'metadata.json'
+
+vectorstore = None
+try:
+    # Load pre-computed embeddings
+    text_embeddings = json.load(open(text_embeddings_file))
+    text_embeddings = [(text, np.array(vec)) for text, vec in text_embeddings]
+    metadata_list = json.load(open(metadata_file))
+    
+    # Create embedding function (only for query embedding)
+    bedrock_client = boto3.client('bedrock-runtime', region_name='us-east-1')
+    embedding_function = BedrockEmbeddings(client=bedrock_client, model_id="amazon.titan-embed-text-v1")
+    
+    # Create FAISS vectorstore
+    vectorstore = FAISS.from_embeddings(
+        text_embeddings=text_embeddings,
+        embedding=embedding_function.embed_query,
+        metadatas=metadata_list,
+        distance_strategy=DistanceStrategy.MAX_INNER_PRODUCT,
+        relevance_score_fn=lambda distance: (distance + 1.0) / 2.0
+    )
+    print(f"✅ Loaded vectorstore with {vectorstore.index.ntotal} vectors")
+except FileNotFoundError:
+    print(f"⚠️  Warning: Embedding files not found in data/ directory.")
+except Exception as e:
+    print(f"⚠️  Warning: Could not load vectorstore: {e}")
 
 
 # ============================================================
@@ -72,35 +109,31 @@ def create_specialized_agents(project_root: Path) -> tuple[Agent, Agent, Agent]:
         allow_delegation=False
     )
     
-    # 2. Data Research Agent (use native CrewAI RagTool)
-    rag_tool = RagTool()
-    
-    # Add embedding files as data sources
-    embeddings_file = project_root / 'data' / 'text_embeddings.json'
-    metadata_file = project_root / 'data' / 'metadata.json'
-    
-    if embeddings_file.exists() and metadata_file.exists():
-        # Load and add documents from embedding files
-        try:
-            embeddings_data = json.load(open(embeddings_file))
-            metadata_data = json.load(open(metadata_file))
-            
-            # Add each document to RagTool
-            for (text, _), meta in zip(embeddings_data, metadata_data):
-                rag_tool.add(data_type="text", content=text)
-            
-            print(f"✅ Loaded {len(embeddings_data)} documents into RagTool")
-        except Exception as e:
-            print(f"⚠️  Warning: Could not load embeddings into RagTool: {e}")
-    else:
-        print(f"⚠️  Warning: Embedding files not found. RagTool will have limited functionality.")
+    # 2. Data Research Agent (use LangChain FAISS with pre-computed embeddings)
+    # Note: Native RagTool doesn't support pre-computed embeddings
+    class SearchTool(BaseTool):
+        name: str = "search_project_docs"
+        description: str = "Search project documentation using semantic similarity. Input: search query string."
+        
+        def _run(self, query: str = "") -> str:
+            if vectorstore is None:
+                return "Error: Vectorstore not loaded. Embedding files must be in data/ directory."
+            if not query:
+                return "Error: No search query provided."
+            try:
+                docs = vectorstore.similarity_search(query, k=3)
+                if not docs:
+                    return "No relevant documents found."
+                return "\n\n---\n\n".join([doc.page_content for doc in docs])
+            except Exception as e:
+                return f"Error: {str(e)}"
     
     research_agent = Agent(
         role="Data Researcher",
         goal="Search through project documents to find relevant information",
         backstory="You search the project knowledge base using semantic similarity.",
         llm="bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0",
-        tools=[rag_tool],
+        tools=[SearchTool()],
         verbose=True,
         allow_delegation=False
     )
