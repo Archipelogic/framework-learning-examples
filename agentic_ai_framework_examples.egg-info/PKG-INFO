@@ -1,0 +1,206 @@
+Metadata-Version: 2.4
+Name: agentic-ai-framework-examples
+Version: 0.1.0
+Summary: Agentic AI Framework Examples - CrewAI and Pydantic AI unified implementations
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: crewai>=0.5.0
+Requires-Dist: crewai-tools>=0.1.0
+Requires-Dist: pydantic-ai>=0.0.14
+Requires-Dist: pyyaml>=6.0
+Requires-Dist: boto3>=1.34.0
+Requires-Dist: arize-phoenix>=4.0.0
+Requires-Dist: openinference-instrumentation-crewai>=0.1.0
+Requires-Dist: openinference-instrumentation-pydantic-ai>=0.1.0
+Requires-Dist: logfire>=0.40.0
+Requires-Dist: pytz>=2024.1
+Requires-Dist: langchain>=0.3.0
+Requires-Dist: langchain-core>=0.3.0
+Requires-Dist: langchain-community>=0.3.0
+Requires-Dist: langchain-aws>=0.1.0
+Requires-Dist: sqlalchemy>=2.0.0
+Requires-Dist: litellm>=1.0.0
+Requires-Dist: qdrant-client>=1.7.0
+Requires-Dist: faiss-cpu>=1.7.4
+Requires-Dist: numpy>=1.24.0
+
+# Agentic AI Framework Examples
+
+Unified implementations of **CrewAI** and **Pydantic AI** with intelligent orchestration. Both frameworks use domain-agnostic agents that automatically route tasks through general capabilities, not hardcoded logic.
+
+## Architecture
+
+Each framework has **1 orchestrator** + **3 specialized agents**:
+
+1. **Analytical Reasoning Specialist** - logical reasoning, calculations, problem-solving
+2. **Knowledge Retrieval Specialist** - semantic search through knowledge base
+3. **Structured Data Specialist** - query and analyze structured data
+
+The orchestrator analyzes requests and routes to the appropriate specialist. No if/then logic - the LLM decides based on capabilities.
+
+## Framework Comparison
+
+| Feature | CrewAI | Pydantic AI | Notes |
+|---------|--------|-------------|-------|
+| **Orchestration** | Sequential process with delegation | Tool-based (specialists as tools) | Both achieve intelligent routing |
+| **Learning Curve** | Moderate | Lower | Pydantic AI is more Pythonic |
+| **Type Safety** | No | Yes (Pydantic models) | Pydantic AI has structured outputs |
+| **Native Tools** | RagTool, inject_date | None | CrewAI has more built-in capabilities |
+| **LangChain Integration** | BaseTool wrappers required | Direct compatibility | Pydantic AI easier to integrate |
+| **Documentation** | Good | Excellent | Pydantic AI has clearer docs |
+| **Observability** | Phoenix (OpenTelemetry) | Phoenix (OpenTelemetry) | Both use same tracing |
+| **Best For** | Multi-agent workflows | Type-safe AI applications | Depends on use case |
+
+## Tool Priority
+
+Both implementations follow this priority:
+1. **Native framework tools first** (e.g., CrewAI's inject_date, RagTool)
+2. **LangChain tools second** (e.g., SQL tools)
+3. **Custom tools last** (only if no alternative exists)
+
+## Setup
+
+### Prerequisites
+- Python 3.10+
+- `uv` package manager
+- AWS credentials configured for Bedrock
+
+### Installation
+
+```bash
+sh setup.sh
+```
+
+### Manual Setup
+
+```bash
+uv venv
+uv sync  # Install from uv.lock
+python sql.py  # Create sample database
+```
+
+## Usage
+
+### Interactive Runner (Recommended)
+
+```bash
+sh run.sh
+```
+
+Select framework, choose sample prompts, or enter your own.
+
+### Direct Execution
+
+```bash
+# CrewAI
+uv run python crewai_unified.py "What time is it in Austin?"
+
+# Pydantic AI  
+uv run python pydantic_ai_unified.py "Which model was used in Attorney Demand Classification?"
+```
+
+### Generate Embeddings (Optional)
+
+For knowledge retrieval tasks:
+
+```bash
+# Place DS_Projects_Docs.json in data/
+python embedding.py
+```
+
+This creates `text_embeddings.json` and `metadata.json` for semantic search.
+
+## Project Structure
+
+```
+framework-learning-examples/
+├── crewai_unified.py          # CrewAI implementation
+├── pydantic_ai_unified.py     # Pydantic AI implementation
+├── embedding.py               # Embedding utilities
+├── run.py                     # Interactive runner
+├── sql.py                     # Database setup
+├── data/                      # Sample data
+│   ├── text_embeddings.json   # Pre-computed embeddings
+│   ├── metadata.json          # Embedding metadata
+│   └── doc.db                 # SQLite database
+└── tasks/                     # Sample prompts (for run.py)
+```
+
+## Key Features
+
+### Domain-Agnostic Design
+
+All agents use general capabilities and methodologies, not domain-specific knowledge:
+
+- **Analytical Reasoning**: Applies systematic reasoning to any problem
+- **Knowledge Retrieval**: Uses semantic search strategy for any topic
+- **Structured Data**: Queries any structured data source
+
+### Semantic Search Strategy
+
+The Knowledge Retrieval Specialist uses a general approach:
+- Start with conceptual queries, not just keywords
+- Refine searches based on initial results  
+- Think about synonyms and related concepts
+- Cast a wide semantic net, then narrow down
+
+This works for any domain without hardcoding.
+
+### Observability
+
+Both frameworks use Phoenix for tracing:
+- Launches at `http://localhost:6006`
+- Tracks orchestration flow
+- Visualizes tool usage
+- LangSmith tracing disabled (Phoenix only)
+
+## Example Tasks
+
+The agents can handle diverse requests:
+
+```bash
+# Time/Date reasoning
+"What time is it in Austin right now?"
+
+# Semantic search
+"Which model was used in the Attorney Demand Classification project?"
+
+# Database queries
+"How many police reports were filed in 2024?"
+
+# Puzzles/Riddles
+"Take the 5th letter in the State Farm jingle and multiply by 10"
+```
+
+No task-specific routing needed - the orchestrator analyzes and delegates based on the request's nature.
+
+## AWS Bedrock Configuration
+
+Uses AWS Bedrock with Claude Sonnet 4.5:
+
+```bash
+export AWS_REGION=us-east-1
+```
+
+Ensure you have:
+1. AWS credentials configured
+2. Bedrock access in us-east-1
+3. Claude model access granted
+
+## Dependencies
+
+Dependencies are managed with `uv` and locked in `uv.lock` for reproducible installations.
+
+Key packages:
+- `crewai>=0.5.0`
+- `pydantic-ai>=0.0.14`
+- `arize-phoenix>=4.0.0`
+- `langchain-community>=0.3.0`
+- `boto3>=1.34.0`
+
+See `pyproject.toml` for complete dependency list.
+
+## Resources
+
+- [CrewAI Documentation](https://docs.crewai.com/)
+- [Pydantic AI Documentation](https://ai.pydantic.dev/)

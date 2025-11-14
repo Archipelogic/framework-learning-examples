@@ -17,6 +17,7 @@ import os
 import sys
 import json
 import warnings
+import webbrowser
 from datetime import datetime
 import pytz
 from pathlib import Path
@@ -44,6 +45,9 @@ warnings.filterwarnings('ignore', message='.*TracerProvider.*global.*')
 session = px.launch_app()
 tracer_provider = register(endpoint="http://localhost:6006/v1/traces")
 PydanticAIInstrumentor().instrument(tracer_provider=tracer_provider)
+
+# Open Phoenix in browser
+webbrowser.open(session.url)
 
 
 # ============================================================

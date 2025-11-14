@@ -16,6 +16,7 @@ NO if/then logic - the agent decides everything through delegation.
 
 import os
 import sys
+import webbrowser
 from pathlib import Path
 
 # MUST set these BEFORE importing CrewAI
@@ -36,6 +37,9 @@ from openinference.instrumentation.crewai import CrewAIInstrumentor
 session = px.launch_app()
 tracer_provider = register(endpoint="http://localhost:6006/v1/traces")
 CrewAIInstrumentor().instrument(tracer_provider=tracer_provider, skip_dep_check=True)
+
+# Open Phoenix in browser
+webbrowser.open(session.url)
 
 # Import CrewAI after instrumentation
 from crewai import Agent, Task, Crew, Process
