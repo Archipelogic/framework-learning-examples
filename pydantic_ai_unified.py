@@ -22,6 +22,8 @@ import pytz
 from pathlib import Path
 
 os.environ["AWS_REGION"] = "us-east-1"
+# Disable LangSmith tracing (we use Phoenix for observability)
+os.environ["LANGCHAIN_TRACING_V2"] = "false"
 
 import phoenix as px
 from phoenix.otel import register

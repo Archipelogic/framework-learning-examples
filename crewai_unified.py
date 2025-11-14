@@ -25,6 +25,8 @@ os.environ["AWS_REGION"] = "us-east-1"
 os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
 # Disable SSL verification for local Phoenix (localhost doesn't need SSL)
 os.environ["OTEL_EXPORTER_OTLP_INSECURE"] = "true"
+# Disable LangSmith tracing (we use Phoenix for observability)
+os.environ["LANGCHAIN_TRACING_V2"] = "false"
 
 import phoenix as px
 from phoenix.otel import register
