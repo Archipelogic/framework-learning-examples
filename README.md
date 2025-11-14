@@ -49,7 +49,7 @@ sh setup.sh
 
 ```bash
 uv venv
-uv pip install -r requirements.txt
+uv sync  # Install from uv.lock
 python sql.py  # Create sample database
 ```
 
@@ -163,17 +163,18 @@ Ensure you have:
 
 ## Dependencies
 
+Dependencies are managed with `uv` and locked in `uv.lock` for reproducible installations.
+
 Key packages:
-- `crewai>=0.80.0`
+- `crewai>=0.5.0`
 - `pydantic-ai>=0.0.14`
 - `arize-phoenix>=4.0.0`
 - `langchain-community>=0.3.0`
 - `boto3>=1.34.0`
 
-See `requirements.txt` for complete list.
+See `pyproject.toml` for complete dependency list.
 
 ## Resources
 
 - [CrewAI Documentation](https://docs.crewai.com/)
 - [Pydantic AI Documentation](https://ai.pydantic.dev/)
-- [Arize Phoenix](https://docs.arize.com/phoenix)

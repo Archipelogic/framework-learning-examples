@@ -1,23 +1,28 @@
 [project]
 name = "agentic-ai-framework-examples"
 version = "0.1.0"
-description = "Agentic AI Framework Examples - CrewAI and Pydantic AI task implementations"
+description = "Agentic AI Framework Examples - CrewAI and Pydantic AI unified implementations"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "crewai>=0.80.0",
-    "crewai-tools>=0.12.0",
+    "crewai>=0.5.0",
+    "crewai-tools>=0.1.0",
     "pydantic-ai>=0.0.14",
     "pyyaml>=6.0",
     "boto3>=1.34.0",
     "arize-phoenix>=4.0.0",
-    "openinference-instrumentation-crewai>=0.1.0",
-    "openinference-instrumentation-pydantic-ai>=0.1.0",
+    "openinference-instrumentation-bedrock>=0.1.0",
     "logfire>=0.40.0",
     "pytz>=2024.1",
+    "langchain>=0.3.0",
+    "langchain-core>=0.3.0",
     "langchain-community>=0.3.0",
+    "langchain-aws>=0.1.0",
     "sqlalchemy>=2.0.0",
     "litellm>=1.0.0",
+    "qdrant-client>=1.7.0",
+    "faiss-cpu>=1.7.4",
+    "numpy>=1.24.0",
 ]
 
 [build-system]

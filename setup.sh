@@ -14,8 +14,8 @@ echo "=========================================="
 echo ""
 
 # Check if we're in the right directory
-if [ ! -f "requirements.txt" ]; then
-    echo "Error: requirements.txt not found. Please run from framework-learning-examples directory."
+if [ ! -f "pyproject.toml" ]; then
+    echo "Error: pyproject.toml not found. Please run from framework-learning-examples directory."
     exit 1
 fi
 
@@ -40,8 +40,8 @@ fi
 
 echo ""
 echo "Installing dependencies with uv..."
-uv pip install -r requirements.txt
-echo "✓ Dependencies installed"
+uv sync
+echo "✓ Dependencies installed (from uv.lock)"
 
 # Step 3: Setup sample database
 echo ""
