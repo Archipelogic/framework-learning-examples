@@ -47,7 +47,6 @@ from langchain_community.tools.sql_database.tool import (
     ListSQLDatabaseTool as LCListTool,
     QuerySQLDatabaseTool as LCQueryTool,
 )
-import json
 from embedding import create_langchain_faiss_vectorstore, get_embedding_for_vectordb
 
 

@@ -1,231 +1,179 @@
 # Agentic AI Framework Examples
 
-Unified implementations of **CrewAI** and **Pydantic AI** with intelligent orchestration agents that automatically route tasks.
-
-## Overview
-
-This repository demonstrates unified implementations of AI frameworks with intelligent orchestration:
-- **CrewAI**: Uses sequential process with delegation for task routing
-- **Pydantic AI**: Uses tool-based orchestration where specialists are tools
-
-Each framework has a single script with **only 3 specialized agents**:
-1. **Reasoning Specialist** (inject_date=True) - handles calculations, puzzles, logical reasoning, time queries
-2. **Data Researcher** (RAG/file tools) - handles file searches
-3. **Database Analyst** (SQL tools) - handles database queries
-
-An orchestration agent analyzes prompts and delegates to the appropriate specialist.
-
-## Project Structure
-
-```
-framework-learning-examples/
-├── crewai_unified.py    # Unified CrewAI with hierarchical orchestration
-├── pydantic_ai_unified.py  # Unified Pydantic AI with tool-based orchestration
-├── tasks/               # Task configurations (single source of truth)
-│   ├── austin.yaml      # Time calculation task - name, description, prompt
-│   ├── statefarm.yaml   # Jingle puzzle task - name, description, prompt
-│   ├── rag.yaml         # File search task - name, description, prompt
-│   └── sql.yaml         # Database query task - name, description, prompt
-├── data/                # Sample data files
-│   ├── projects/        # JSON files for RAG tasks
-│   └── doc.csv          # SQLite database for SQL tasks
-├── run.py               # Interactive task runner with sample prompts
-├── setup.sh             # Automated setup script
-└── run.sh               # Quick run script
-```
+Unified implementations of **CrewAI** and **Pydantic AI** with intelligent orchestration. Both frameworks use domain-agnostic agents that automatically route tasks through general capabilities, not hardcoded logic.
 
 ## Architecture
 
-### Minimal Agent Design
-Both frameworks use only **3 specialized agents**:
+Each framework has **1 orchestrator** + **3 specialized agents**:
 
-1. **Reasoning Specialist** (inject_date=True)
-   - Handles: Time calculations, puzzles, riddles, mathematical reasoning
-   - Features: Native CrewAI date/time awareness via `inject_date=True`
-   - Examples: Austin time calculation, StateFarm jingle puzzle
-   - Flexible enough to handle any logical reasoning task
+1. **Analytical Reasoning Specialist** - logical reasoning, calculations, problem-solving
+2. **Knowledge Retrieval Specialist** - semantic search through knowledge base
+3. **Structured Data Specialist** - query and analyze structured data
 
-2. **Data Researcher** (RAG/file tools)
-   - Handles: File searches, document analysis
-   - Tools: CrewAI uses native `RagTool`, Pydantic AI uses custom file reading
-   - Examples: Searching through project JSON files
+The orchestrator analyzes requests and routes to the appropriate specialist. No if/then logic - the LLM decides based on capabilities.
 
-3. **Database Analyst** (SQL tools)
-   - Handles: Database queries, structured data analysis
-   - Tools: Both use LangChain SQL tools (no native available)
-   - Examples: Querying police reports database
+## Framework Comparison
 
-### Orchestration
-- **CrewAI**: Sequential process with `allow_delegation=True` on orchestrator
-- **Pydantic AI**: Tool-based where each specialist is a callable tool
-- **No if/then logic**: The orchestration agent decides which specialist to use based on prompt analysis
+| Feature | CrewAI | Pydantic AI | Notes |
+|---------|--------|-------------|-------|
+| **Orchestration** | Sequential process with delegation | Tool-based (specialists as tools) | Both achieve intelligent routing |
+| **Learning Curve** | Moderate | Lower | Pydantic AI is more Pythonic |
+| **Type Safety** | No | Yes (Pydantic models) | Pydantic AI has structured outputs |
+| **Native Tools** | RagTool, inject_date | None | CrewAI has more built-in capabilities |
+| **LangChain Integration** | BaseTool wrappers required | Direct compatibility | Pydantic AI easier to integrate |
+| **Documentation** | Good | Excellent | Pydantic AI has clearer docs |
+| **Observability** | Phoenix (OpenTelemetry) | Phoenix (OpenTelemetry) | Both use same tracing |
+| **Best For** | Multi-agent workflows | Type-safe AI applications | Depends on use case |
 
-## How It Works
+## Tool Priority
 
-### Execution Flow
-
-1. **User provides a prompt** (e.g., "What time is it in Austin?")
-
-2. **Orchestration agent analyzes the prompt**
-   - CrewAI: Orchestrator agent with delegation enabled
-   - Pydantic AI: Agent with specialist tools
-
-3. **Agent decides which specialist to use**
-   - Reasoning Specialist: for calculations, puzzles, logic
-   - Data Researcher: for file/document searches
-   - Database Analyst: for database queries
-
-4. **Specialist executes the task**
-   - Uses appropriate tools (RAG, SQL, or none)
-   - Returns structured result
-
-5. **Result returned to user**
-   - With reasoning/explanation
-   - Traced in Phoenix for observability
-
-### Key Advantage
-
-The system is **flexible and scalable**:
-- Can handle the 4 example tasks (Austin, StateFarm, RAG, SQL)
-- Can handle 1000s of similar tasks without modification
-- Agent decides based on prompt content, not predefined categories
+Both implementations follow this priority:
+1. **Native framework tools first** (e.g., CrewAI's inject_date, RagTool)
+2. **LangChain tools second** (e.g., SQL tools)
+3. **Custom tools last** (only if no alternative exists)
 
 ## Setup
 
 ### Prerequisites
 - Python 3.10+
-- [uv](https://github.com/astral-sh/uv) package manager
-- AWS credentials configured (for Bedrock)
+- `uv` package manager
+- AWS credentials configured for Bedrock
 
 ### Installation
 
 ```bash
-# Clone the repository
-git clone https://github.com/Archipelogic/framework-learning-examples.git
-cd framework-learning-examples
-
-# Run setup script
 sh setup.sh
 ```
-
-The setup script will:
-1. Create a virtual environment
-2. Install all dependencies
-3. Set up sample database
-4. Launch interactive task runner
 
 ### Manual Setup
 
 ```bash
-# Create virtual environment
 uv venv
-
-# Install dependencies
 uv pip install -r requirements.txt
-
-# Create sample database
-uv run python sql.py
+python sql.py  # Create sample database
 ```
 
 ## Usage
 
-### Option 1: Interactive Runner (Recommended)
+### Interactive Runner (Recommended)
 
 ```bash
 sh run.sh
-# or
-uv run python run.py
 ```
 
-This launches an interactive menu where you can:
-1. Select a framework (CrewAI or Pydantic AI)
-2. Choose from sample prompts (dynamically loaded from `tasks/` YAML files) or enter your own
-3. Watch the orchestration agent delegate to specialists
+Select framework, choose sample prompts, or enter your own.
 
-### Option 2: Direct Script Execution
+### Direct Execution
 
 ```bash
-# CrewAI - orchestration agent will analyze and delegate
-uv run python crewai_unified.py "What is the current time in Austin?"
+# CrewAI
+uv run python crewai_unified.py "What time is it in Austin?"
 
-# Pydantic AI - orchestration agent will select appropriate tool
-uv run python pydantic_ai_unified.py "How many police reports in 2024?"
-
-# File search example
-uv run python crewai_unified.py "Which model was used in the Attorney Demand Classification project?"
-
-# Puzzle example
-uv run python pydantic_ai_unified.py "Take the 5th letter in the State Farm jingle and multiply by 10"
+# Pydantic AI  
+uv run python pydantic_ai_unified.py "Which model was used in Attorney Demand Classification?"
 ```
 
-The orchestration agent automatically determines which specialist to use - no manual task selection needed!
+### Generate Embeddings (Optional)
 
-## Key Features Demonstrated
+For knowledge retrieval tasks:
 
-### CrewAI
-- **Sequential with Delegation**: Orchestrator delegates to 3 specialized agents
-- **Minimal Agent Set**: Only 3 agents handle all task types
-- **Native RAG Tool**: Built-in RagTool for file search
-- **LangChain Integration**: SQL tools wrapped in BaseTool
-- **Flexible Architecture**: Reasoning agent handles multiple task types
-- **Phoenix Observability**: Tracing with Arize Phoenix
+```bash
+# Place DS_Projects_Docs.json in data/
+python embedding.py
+```
 
-### Pydantic AI
-- **Tool-Based Orchestration**: Specialists exposed as callable tools
-- **Minimal Agent Set**: Only 3 agents handle all task types
-- **Structured Outputs**: Type-safe results with Pydantic models
-- **Custom Tools**: File reading tools with @agent.tool decorator
-- **LangChain Integration**: SQL tools compatibility
-- **Flexible Architecture**: Reasoning agent handles multiple task types
-- **Phoenix Observability**: Tracing with Arize Phoenix
+This creates `text_embeddings.json` and `metadata.json` for semantic search.
 
-## Observability
+## Project Structure
 
-Both unified scripts include Phoenix observability:
+```
+framework-learning-examples/
+├── crewai_unified.py          # CrewAI implementation
+├── pydantic_ai_unified.py     # Pydantic AI implementation
+├── embedding.py               # Embedding utilities
+├── run.py                     # Interactive runner
+├── sql.py                     # Database setup
+├── data/                      # Sample data
+│   ├── text_embeddings.json   # Pre-computed embeddings
+│   ├── metadata.json          # Embedding metadata
+│   └── doc.db                 # SQLite database
+└── tasks/                     # Sample prompts (for run.py)
+```
 
-- **Phoenix (Arize)**: Used in both frameworks
-  - Launches at `http://localhost:6006`
-  - Provides detailed trace visualization
-  - Tracks orchestration flow and tool usage
+## Key Features
+
+### Domain-Agnostic Design
+
+All agents use general capabilities and methodologies, not domain-specific knowledge:
+
+- **Analytical Reasoning**: Applies systematic reasoning to any problem
+- **Knowledge Retrieval**: Uses semantic search strategy for any topic
+- **Structured Data**: Queries any structured data source
+
+### Semantic Search Strategy
+
+The Knowledge Retrieval Specialist uses a general approach:
+- Start with conceptual queries, not just keywords
+- Refine searches based on initial results  
+- Think about synonyms and related concepts
+- Cast a wide semantic net, then narrow down
+
+This works for any domain without hardcoding.
+
+### Observability
+
+Both frameworks use Phoenix for tracing:
+- Launches at `http://localhost:6006`
+- Tracks orchestration flow
+- Visualizes tool usage
+- LangSmith tracing disabled (Phoenix only)
+
+## Example Tasks
+
+The agents can handle diverse requests:
+
+```bash
+# Time/Date reasoning
+"What time is it in Austin right now?"
+
+# Semantic search
+"Which model was used in the Attorney Demand Classification project?"
+
+# Database queries
+"How many police reports were filed in 2024?"
+
+# Puzzles/Riddles
+"Take the 5th letter in the State Farm jingle and multiply by 10"
+```
+
+No task-specific routing needed - the orchestrator analyzes and delegates based on the request's nature.
+
+## AWS Bedrock Configuration
+
+Uses AWS Bedrock with Claude Sonnet 4.5:
+
+```bash
+export AWS_REGION=us-east-1
+```
+
+Ensure you have:
+1. AWS credentials configured
+2. Bedrock access in us-east-1
+3. Claude model access granted
 
 ## Dependencies
 
 Key packages:
-- `crewai>=0.80.0` - Multi-agent orchestration
-- `pydantic-ai>=0.0.14` - Type-safe agent framework
-- `arize-phoenix>=4.0.0` - Observability platform
-- `logfire>=0.40.0` - Pydantic observability
-- `langchain-community>=0.3.0` - LangChain tools
-- `boto3>=1.34.0` - AWS Bedrock integration
+- `crewai>=0.80.0`
+- `pydantic-ai>=0.0.14`
+- `arize-phoenix>=4.0.0`
+- `langchain-community>=0.3.0`
+- `boto3>=1.34.0`
 
 See `requirements.txt` for complete list.
-
-## Known Issues
-
-### huggingface-hub Warning
-You may see this warning during installation:
-```
-warning: The package `huggingface-hub==1.1.2` does not have an extra named `inference`
-```
-
-This is **expected and harmless**. The `tokenizers` package pins `huggingface-hub==1.1.2`, which doesn't have the `inference` extra. All packages install successfully despite the warning.
-
-## AWS Bedrock Configuration
-
-All examples use AWS Bedrock with Claude Sonnet 4.5. Ensure you have:
-
-1. AWS credentials configured
-2. Bedrock access enabled in `us-east-1`
-3. Claude model access granted
-
-Set environment variable:
-```bash
-export AWS_REGION=us-east-1
-```
 
 ## Resources
 
 - [CrewAI Documentation](https://docs.crewai.com/)
 - [Pydantic AI Documentation](https://ai.pydantic.dev/)
 - [Arize Phoenix](https://docs.arize.com/phoenix)
-- [Logfire](https://docs.pydantic.dev/logfire/)
