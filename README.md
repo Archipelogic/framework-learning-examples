@@ -16,19 +16,19 @@ The orchestrator analyzes requests and routes to the appropriate specialist. No 
 
 | Item (Scale 1-10, higher the better) | CrewAI | Pydantic AI | Comments |
 |---------------------------------------|--------|-------------|----------|
-| **Framework Design** | 8 | 9 | Both well-architected; Pydantic AI more Pythonic |
-| **Documentation** | 7 | 9 | CrewAI has good docs; Pydantic AI documentation is excellent and comprehensive |
-| **Framework Learning Curve** | 6 | 8 | CrewAI has more concepts to learn; Pydantic AI is straightforward |
-| **System Prompt** | 8 | 9 | Both support rich system prompts; Pydantic AI's agent.system_prompt is cleaner |
-| **Out of Box Coding** | 9 | 7 | CrewAI can generate Python with right packages; Pydantic AI needs explicit tools |
-| **Latency** | 7 | 7 | Similar performance on complex tasks; both use same LLM backend |
-| **Agents as Tools (Orchestration)** | 9 | 8 | CrewAI uses delegation naturally; Pydantic AI requires wrapping agents as tools |
-| **Independent Task Execution** | Yes | Possible but manual | CrewAI agents can work in parallel; Pydantic AI would need custom implementation |
-| **Graph Capability** | No | No | Neither has built-in graph workflows; would need LangGraph integration |
-| **Native Tools** | RagTool, inject_date | None | CrewAI has more built-in tools |
-| **LangChain Integration** | BaseTool wrappers required | Direct compatibility | Pydantic AI easier to integrate LangChain tools |
-| **Type Safety** | No | Yes (Pydantic models) | Pydantic AI has structured, validated outputs |
-| **Best For** | Multi-agent orchestration | Type-safe AI applications | Choose based on use case |
+| **Framework Design** | 8 | 9 | CrewAI: Built from scratch, LangChain-independent. Pydantic AI: Built by Pydantic team, powers OpenAI/Anthropic SDKs |
+| **Documentation** | 8 | 9 | CrewAI: Comprehensive with 1000+ doc pages, guides, and examples. Pydantic AI: Excellent, clear, type-focused |
+| **Framework Learning Curve** | 6 | 8 | CrewAI: More concepts (Agents, Tasks, Crews, Flows, Processes). Pydantic AI: Simpler, Pythonic, familiar patterns |
+| **System Prompt** | 9 | 9 | CrewAI: Rich role/goal/backstory system with prompts. Pydantic AI: Clean system_prompt with deps injection |
+| **Out of Box Coding** | 10 | 7 | CrewAI: CodeInterpreterTool generates/executes Python code. Pydantic AI: Needs explicit @agent.tool definitions |
+| **Latency** | 7 | 7 | Similar - both support async, streaming, same LLM backends, performance depends on implementation |
+| **Agents as Tools (Orchestration)** | 10 | 8 | CrewAI: Native delegation with allow_delegation=True. Pydantic AI: Wrap agents as tools manually |
+| **Independent Task Execution** | Yes (async_execution) | Possible (asyncio) | CrewAI: Built-in async task execution. Pydantic AI: Manual async implementation required |
+| **Graph Capability** | Yes (Flows with @router) | Yes (graph with type hints) | CrewAI: Flows with conditional routing. Pydantic AI: Type-hint based graph definitions |
+| **Native Tools** | 50+ tools (RAG, File, DB, Search) | MCP, A2A protocol support | CrewAI: Extensive built-in tool library. Pydantic AI: Protocol-based, bring your own tools |
+| **LangChain Integration** | Native (BaseTool wrappers) | Direct (Pydantic validates everything) | CrewAI: Wraps LangChain tools. Pydantic AI: Pydantic is LangChain's validation layer |
+| **Type Safety** | No | Yes (Full type checking) | CrewAI: Dynamic, runtime validation. Pydantic AI: Compile-time type safety, IDE autocomplete |
+| **Best For** | Multi-agent orchestration, RAG, delegation | Type-safe apps, durable execution, evals | CrewAI: Enterprise workflows. Pydantic AI: Production reliability |
 
 ## Tool Priority
 
