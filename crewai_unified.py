@@ -88,10 +88,23 @@ def create_specialized_agents(project_root: Path) -> tuple[Agent, Agent, Agent]:
     3. Database Agent (SQL tools) - handles database queries
     """
     
-    # 1. General Reasoning Agent (use native inject_date for time awareness)
+    # 1. Reasoning Agent (General problem-solving with time tool)
+    # Note: inject_date only provides DATE, not actual TIME - need explicit tool
+    class CurrentTimeTool(BaseTool):
+        name: str = "get_current_time"
+        description: str = "Get the current time in a specific timezone. Input should be a timezone name like 'America/Chicago', 'America/New_York', or 'UTC'."
+        
+        def _run(self, timezone: str = "UTC") -> str:
+            try:
+                tz = pytz.timezone(timezone)
+                current_time = datetime.now(tz)
+                return f"Current time in {timezone}: {current_time.strftime('%Y-%m-%d %H:%M:%S %Z')}"
+            except Exception as e:
+                return f"Error getting time: {str(e)}"
+    
     reasoning_agent = Agent(
         role="Analytical Reasoning Specialist",
-        goal="Apply logical reasoning and analytical thinking to solve complex problems",
+        goal="Apply logical reasoning and problem-solving to any challenge",
         backstory="""You are an expert in analytical reasoning and problem-solving.
 
 Your Capabilities:
@@ -108,7 +121,8 @@ Your Approach:
 - Verify conclusions for logical consistency
 - Explain your reasoning process clearly""",
         llm="bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0",
-        inject_date=True,  # Native CrewAI time/date injection
+        tools=[CurrentTimeTool()],  # Explicit time tool (inject_date only gives date, not time)
+        inject_date=True,  # Additional date context
         verbose=True,
         allow_delegation=False
     )
