@@ -48,46 +48,33 @@ BedrockInstrumentor().instrument(tracer_provider=tracer_provider)
 
 
 # ============================================================
-# VECTORSTORE SETUP (Module Level - matches CrewAI)
+# VECTORSTORE SETUP (Load pre-computed embeddings only)
 # ============================================================
-def create_langchain_faiss_vectorstore(text_embeddings_path, metadata_path, embedding_function):
-    """Create FAISS vectorstore from pre-computed embeddings"""
-    text_embeddings = json.load(open(text_embeddings_path))
+text_embeddings_file = Path(__file__).parent / 'data' / 'text_embeddings.json'
+metadata_file = Path(__file__).parent / 'data' / 'metadata.json'
+
+# Load vectorstore from pre-computed embeddings (or None if files don't exist)
+try:
+    # Load pre-computed embeddings
+    text_embeddings = json.load(open(text_embeddings_file))
     text_embeddings = [(text, np.array(vec)) for text, vec in text_embeddings]
-    metadata_list = json.load(open(metadata_path))
+    metadata_list = json.load(open(metadata_file))
     
+    # Create embedding function (only used for query embedding, not document embedding)
+    bedrock_client = boto3.client('bedrock-runtime', region_name='us-east-1')
+    embedding_function = BedrockEmbeddings(client=bedrock_client, model_id="amazon.titan-embed-text-v1")
+    
+    # Create FAISS vectorstore from pre-computed embeddings
     vectorstore = FAISS.from_embeddings(
         text_embeddings=text_embeddings,
-        embedding=embedding_function,
+        embedding=embedding_function.embed_query,
         metadatas=metadata_list,
         distance_strategy=DistanceStrategy.MAX_INNER_PRODUCT,
         relevance_score_fn=lambda distance: (distance + 1.0) / 2.0
     )
-    return vectorstore
-
-
-def get_embedding_for_vectordb(client, model_id):
-    """Get embedding function for vectorstore"""
-    embedding_function = BedrockEmbeddings(client=client, model_id=model_id)
-    return embedding_function.embed_query
-
-
-# Setup vectorstore at module level
-embedding_model_id = "amazon.titan-embed-text-v1"
-text_embeddings_file = Path(__file__).parent / 'data' / 'text_embeddings.json'
-metadata_file = Path(__file__).parent / 'data' / 'metadata.json'
-
-# Create bedrock client and embedding function
-bedrock_client = boto3.client('bedrock-runtime', region_name='us-east-1')
-embedding_function = get_embedding_for_vectordb(bedrock_client, embedding_model_id)
-
-# Create vectorstore (or None if files don't exist)
-try:
-    vectorstore = create_langchain_faiss_vectorstore(text_embeddings_file, metadata_file, embedding_function)
-    print(f"✅ Loaded vectorstore with {vectorstore.index.ntotal} vectors")
-except FileNotFoundError as e:
+    print(f"✅ Loaded vectorstore with {vectorstore.index.ntotal} vectors from pre-computed embeddings")
+except FileNotFoundError:
     print(f"⚠️  Warning: Embedding files not found. Copy text_embeddings.json and metadata.json to data/ directory.")
-    print(f"   RAG tool will not work until files are present.")
     vectorstore = None
 
 
