@@ -74,7 +74,10 @@ try:
     )
     print(f"✅ Loaded vectorstore with {vectorstore.index.ntotal} vectors from pre-computed embeddings")
 except FileNotFoundError:
-    print(f"⚠️  Warning: Embedding files not found. Copy text_embeddings.json and metadata.json to data/ directory.")
+    print(f"⚠️  Warning: Embedding files not found in data/ directory.")
+    vectorstore = None
+except Exception as e:
+    print(f"⚠️  Warning: Could not load vectorstore: {e}")
     vectorstore = None
 
 
