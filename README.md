@@ -84,7 +84,7 @@ framework-learning-examples/
 
 ### CrewAI Setup (`crewai_unified.py`)
 
-**Architecture Pattern**: Sequential process with delegation
+**Architecture Pattern**: Task-based with sequential process and delegation
 
 ```python
 # 1. Phoenix Observability
@@ -122,17 +122,26 @@ orchestrator = Agent(
     llm="bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0"
 )
 
-# 5. Crew Execution
+# 5. Task Definition
+orchestration_task = Task(
+    description=f"""Analyze this user request and delegate to the appropriate specialist:
+    User Request: {user_prompt}""",
+    agent=orchestrator,  # Assigned to orchestrator
+    expected_output="A comprehensive response from the appropriate specialist"
+)
+
+# 6. Crew Execution with Task
 crew = Crew(
     agents=[orchestrator, reasoning_agent, research_agent, database_agent],
-    tasks=[orchestration_task],
-    process=Process.sequential,
+    tasks=[orchestration_task],  # KEY: Tasks drive the workflow
+    process=Process.sequential,  # Tasks execute in order
     verbose=True
 )
 ```
 
 **Key CrewAI Capabilities**:
-- ✅ **Native Delegation**: `allow_delegation=True` enables agent-to-agent communication
+- ✅ **Task Orchestration**: Tasks drive the workflow, assigned to specific agents
+- ✅ **Native Delegation**: `allow_delegation=True` enables agent-to-agent communication within tasks
 - ✅ **inject_date**: Built-in time/date awareness without custom tools
 - ✅ **Role/Goal/Backstory**: Rich agent definition system
 - ✅ **BaseTool Wrappers**: Standardizes LangChain tools for CrewAI
