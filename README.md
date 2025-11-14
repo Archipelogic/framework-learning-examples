@@ -12,6 +12,131 @@ Each framework has **1 orchestrator** + **3 specialized agents**:
 
 The orchestrator analyzes requests and routes to the appropriate specialist. No if/then logic - the LLM decides based on capabilities.
 
+## Implementation Details
+
+### CrewAI Setup (`crewai_unified.py`)
+
+**Architecture Pattern**: Sequential process with delegation
+
+```python
+# 1. Phoenix Observability
+session = px.launch_app()
+CrewAIInstrumentor().instrument(tracer_provider=tracer_provider)
+webbrowser.open(session.url)  # Auto-opens Phoenix UI
+
+# 2. Vectorstore (Custom FAISS due to RagTool limitations)
+embedding_function = get_embedding_for_vectordb(bedrock_client, embedding_model_id)
+vectorstore = create_langchain_faiss_vectorstore(text_embeddings_file, metadata_file, embedding_function)
+
+# 3. Specialized Agents
+reasoning_agent = Agent(
+    role="Analytical Reasoning Specialist",
+    inject_date=True,  # Native time awareness
+    allow_delegation=False
+)
+
+research_agent = Agent(
+    role="Knowledge Retrieval Specialist",
+    tools=[SearchTool()],  # Custom FAISS wrapper (RagTool doesn't support precomputed embeddings)
+    allow_delegation=False
+)
+
+database_agent = Agent(
+    role="Structured Data Specialist",
+    tools=[InfoTool(), ListTool(), QueryTool()],  # LangChain SQL tools wrapped in BaseTool
+    allow_delegation=False
+)
+
+# 4. Orchestrator with Delegation
+orchestrator = Agent(
+    role="Intelligent Orchestrator",
+    allow_delegation=True,  # KEY: Enables routing to specialists
+    llm="bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0"
+)
+
+# 5. Crew Execution
+crew = Crew(
+    agents=[orchestrator, reasoning_agent, research_agent, database_agent],
+    tasks=[orchestration_task],
+    process=Process.sequential,
+    verbose=True
+)
+```
+
+**Key CrewAI Capabilities**:
+- ✅ **Native Delegation**: `allow_delegation=True` enables agent-to-agent communication
+- ✅ **inject_date**: Built-in time/date awareness without custom tools
+- ✅ **Role/Goal/Backstory**: Rich agent definition system
+- ✅ **BaseTool Wrappers**: Standardizes LangChain tools for CrewAI
+- ⚠️ **RagTool Limitation**: Doesn't support precomputed embeddings (had to use custom FAISS)
+
+### Pydantic AI Setup (`pydantic_ai_unified.py`)
+
+**Architecture Pattern**: Tool-based orchestration
+
+```python
+# 1. Phoenix Observability
+session = px.launch_app()
+PydanticAIInstrumentor().instrument(tracer_provider=tracer_provider)
+webbrowser.open(session.url)  # Auto-opens Phoenix UI
+
+# 2. Vectorstore (Custom FAISS)
+embedding_function = get_embedding_for_vectordb(bedrock_client, embedding_model_id)
+vectorstore = create_langchain_faiss_vectorstore(text_embeddings_file, metadata_file, embedding_function)
+
+# 3. Specialized Agents
+reasoning_agent = Agent(
+    model=model,
+    system_prompt="""Apply systematic reasoning...""",
+    deps_type=None  # No tools needed
+)
+
+research_agent = Agent(
+    model=model,
+    system_prompt="""Expert at semantic search...""",
+    deps_type=None
+)
+
+@research_agent.tool
+def semantic_search(ctx: RunContext[None], query: str) -> str:
+    """Custom tool with type safety"""
+    results = vectorstore.similarity_search_with_score(query, k=3)
+    return formatted_results
+
+database_agent = Agent(
+    model=model,
+    system_prompt="""Database specialist...""",
+    deps_type=DatabaseDeps
+)
+
+# 4. Orchestrator with Agent Tools
+@orchestrator.tool
+async def use_analytical_reasoning(ctx: RunContext[OrchestratorDeps], request: str) -> str:
+    """Wraps reasoning agent as a tool"""
+    result = await reasoning_agent.run(request)
+    return result.data
+
+@orchestrator.tool
+async def use_knowledge_retrieval(ctx: RunContext[OrchestratorDeps], request: str) -> str:
+    """Wraps research agent as a tool"""
+    result = await research_agent.run(request)
+    return result.data
+
+# 5. Orchestrator Execution
+result = await orchestrator.run(
+    user_prompt,
+    deps=OrchestratorDeps(project_root=project_root, user_prompt=user_prompt)
+)
+```
+
+**Key Pydantic AI Capabilities**:
+- ✅ **Type Safety**: Full type checking with Pydantic models, catch errors at write-time
+- ✅ **Dependency Injection**: Clean separation of data and logic via `deps_type`
+- ✅ **@agent.tool Decorator**: Pythonic tool definitions with automatic schema generation
+- ✅ **Async Native**: Built-in async/await support for all operations
+- ✅ **Structured Outputs**: Type-safe results with automatic validation
+- ⚠️ **Manual Orchestration**: Must wrap agents as tools explicitly (more boilerplate)
+
 ## Framework Comparison
 
 | Item (Scale 1-10, higher the better) | CrewAI | Pydantic AI | Comments |
