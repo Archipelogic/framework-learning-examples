@@ -16,6 +16,7 @@ NO if/then logic - the agent decides everything through tool selection.
 import os
 import sys
 import json
+import warnings
 from datetime import datetime
 import pytz
 from pathlib import Path
@@ -34,6 +35,10 @@ from langchain_community.tools.sql_database.tool import (
     QuerySQLDatabaseTool
 )
 
+# Suppress noisy warnings
+warnings.filterwarnings('ignore', category=Warning, message='.*Skipped unsupported reflection.*')
+warnings.filterwarnings('ignore', message='.*BatchSpanProcessor.*')
+warnings.filterwarnings('ignore', message='.*TracerProvider.*global.*')
 
 # Launch Phoenix and setup Bedrock tracing (align with crewai_unified)
 session = px.launch_app()
