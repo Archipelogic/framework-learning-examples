@@ -28,7 +28,7 @@ os.environ["LANGCHAIN_TRACING_V2"] = "false"
 
 import phoenix as px
 from phoenix.otel import register
-from openinference.instrumentation.pydantic_ai import PydanticAIInstrumentor
+from openinference.instrumentation.pydantic_ai import OpenInferenceSpanProcessor, is_openinference_span
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent, RunContext
 from pydantic_ai.models.bedrock import BedrockConverseModel
@@ -44,7 +44,10 @@ warnings.filterwarnings('ignore', message='.*TracerProvider.*global.*')
 # Launch Phoenix and setup tracing
 session = px.launch_app()
 tracer_provider = register(endpoint="http://localhost:6006/v1/traces")
-PydanticAIInstrumentor().instrument(tracer_provider=tracer_provider)
+
+# Add OpenInference span processor for Pydantic AI
+openinference_processor = OpenInferenceSpanProcessor(span_filter=is_openinference_span)
+tracer_provider.add_span_processor(openinference_processor)
 
 # Open Phoenix in browser
 webbrowser.open(session.url)

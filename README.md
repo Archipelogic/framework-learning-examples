@@ -154,7 +154,10 @@ crew = Crew(
 ```python
 # 1. Phoenix Observability
 session = px.launch_app()
-PydanticAIInstrumentor().instrument(tracer_provider=tracer_provider)
+tracer_provider = register(endpoint="http://localhost:6006/v1/traces")
+# Pydantic AI uses OpenInferenceSpanProcessor, not an Instrumentor
+openinference_processor = OpenInferenceSpanProcessor(span_filter=is_openinference_span)
+tracer_provider.add_span_processor(openinference_processor)
 webbrowser.open(session.url)  # Auto-opens Phoenix UI
 
 # 2. Vectorstore (Custom FAISS)
@@ -243,7 +246,7 @@ result = await orchestrator.run(
 - ⚠️ **RAG Task Completion**: Knowledge retrieval agent sometimes struggles with complex semantic searches
 
 ### Pydantic AI
-- ✅ **Phoenix Tracing Works**: PydanticAIInstrumentor correctly traces all operations
+- ✅ **Phoenix Tracing Works**: Uses `OpenInferenceSpanProcessor` (different from CrewAI's Instrumentor pattern)
 - ⚠️ **RAG Task Completion**: Similar to CrewAI, complex retrieval queries sometimes incomplete
 - ⚠️ **Manual Tool Wrapping**: Need to manually wrap agents as tools for orchestration (more boilerplate)
 
