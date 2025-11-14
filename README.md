@@ -12,6 +12,74 @@ Each framework has **1 orchestrator** + **3 specialized agents**:
 
 The orchestrator analyzes requests and routes to the appropriate specialist. No if/then logic - the LLM decides based on capabilities.
 
+## Setup
+
+### Prerequisites
+- Python 3.10+
+- `uv` package manager
+- AWS credentials configured for Bedrock
+
+### Installation
+
+```bash
+sh setup.sh
+```
+
+### Manual Setup
+
+```bash
+uv venv
+uv sync  # Install from uv.lock
+python sql.py  # Create sample database
+```
+
+## Usage
+
+### Interactive Runner (Recommended)
+
+```bash
+sh run.sh
+```
+
+Select framework, choose sample prompts, or enter your own.
+
+### Direct Execution
+
+```bash
+# CrewAI
+uv run python crewai_unified.py "What time is it in Austin?"
+
+# Pydantic AI  
+uv run python pydantic_ai_unified.py "Which model was used in Attorney Demand Classification?"
+```
+
+### Generate Embeddings (Optional)
+
+For knowledge retrieval tasks:
+
+```bash
+# Place DS_Projects_Docs.json in data/
+python embedding.py
+```
+
+This creates `text_embeddings.json` and `metadata.json` for semantic search.
+
+## Project Structure
+
+```
+framework-learning-examples/
+├── crewai_unified.py          # CrewAI implementation
+├── pydantic_ai_unified.py     # Pydantic AI implementation
+├── embedding.py               # Embedding utilities
+├── run.py                     # Interactive runner
+├── sql.py                     # Database setup
+├── data/                      # Sample data
+│   ├── text_embeddings.json   # Pre-computed embeddings
+│   ├── metadata.json          # Embedding metadata
+│   └── doc.db                 # SQLite database
+└── tasks/                     # Sample prompts (for run.py)
+```
+
 ## Implementation Details
 
 ### CrewAI Setup (`crewai_unified.py`)
@@ -182,74 +250,6 @@ Both implementations follow this priority:
 3. **Custom tools last** (only if no alternative exists)
 
 **Note**: Due to issues encountered, we had to deviate from this priority for RAG - using custom LangChain FAISS tools instead of native options.
-
-## Setup
-
-### Prerequisites
-- Python 3.10+
-- `uv` package manager
-- AWS credentials configured for Bedrock
-
-### Installation
-
-```bash
-sh setup.sh
-```
-
-### Manual Setup
-
-```bash
-uv venv
-uv sync  # Install from uv.lock
-python sql.py  # Create sample database
-```
-
-## Usage
-
-### Interactive Runner (Recommended)
-
-```bash
-sh run.sh
-```
-
-Select framework, choose sample prompts, or enter your own.
-
-### Direct Execution
-
-```bash
-# CrewAI
-uv run python crewai_unified.py "What time is it in Austin?"
-
-# Pydantic AI  
-uv run python pydantic_ai_unified.py "Which model was used in Attorney Demand Classification?"
-```
-
-### Generate Embeddings (Optional)
-
-For knowledge retrieval tasks:
-
-```bash
-# Place DS_Projects_Docs.json in data/
-python embedding.py
-```
-
-This creates `text_embeddings.json` and `metadata.json` for semantic search.
-
-## Project Structure
-
-```
-framework-learning-examples/
-├── crewai_unified.py          # CrewAI implementation
-├── pydantic_ai_unified.py     # Pydantic AI implementation
-├── embedding.py               # Embedding utilities
-├── run.py                     # Interactive runner
-├── sql.py                     # Database setup
-├── data/                      # Sample data
-│   ├── text_embeddings.json   # Pre-computed embeddings
-│   ├── metadata.json          # Embedding metadata
-│   └── doc.db                 # SQLite database
-└── tasks/                     # Sample prompts (for run.py)
-```
 
 ## Key Features
 
