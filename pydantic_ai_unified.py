@@ -34,6 +34,12 @@ from langchain_community.tools.sql_database.tool import (
     InfoSQLDatabaseTool,
     QuerySQLDatabaseTool
 )
+import numpy as np
+import boto3
+from langchain_community.vectorstores import FAISS
+from langchain_community.vectorstores.utils import DistanceStrategy
+from langchain_aws import BedrockEmbeddings
+from langchain_core.documents import Document
 
 # Suppress noisy warnings
 warnings.filterwarnings('ignore', category=Warning, message='.*Skipped unsupported reflection.*')
@@ -44,6 +50,50 @@ warnings.filterwarnings('ignore', message='.*TracerProvider.*global.*')
 session = px.launch_app()
 tracer_provider = register(endpoint="http://localhost:6006/v1/traces")
 BedrockInstrumentor().instrument(tracer_provider=tracer_provider)
+
+
+# ============================================================
+# VECTORSTORE SETUP (Module Level - matches CrewAI)
+# ============================================================
+def create_langchain_faiss_vectorstore(text_embeddings_path, metadata_path, embedding_function):
+    """Create FAISS vectorstore from pre-computed embeddings"""
+    text_embeddings = json.load(open(text_embeddings_path))
+    text_embeddings = [(text, np.array(vec)) for text, vec in text_embeddings]
+    metadata_list = json.load(open(metadata_path))
+    
+    vectorstore = FAISS.from_embeddings(
+        text_embeddings=text_embeddings,
+        embedding=embedding_function,
+        metadatas=metadata_list,
+        distance_strategy=DistanceStrategy.MAX_INNER_PRODUCT,
+        relevance_score_fn=lambda distance: (distance + 1.0) / 2.0
+    )
+    return vectorstore
+
+
+def get_embedding_for_vectordb(client, model_id):
+    """Get embedding function for vectorstore"""
+    embedding_function = BedrockEmbeddings(client=client, model_id=model_id)
+    return embedding_function.embed_query
+
+
+# Setup vectorstore at module level
+embedding_model_id = "amazon.titan-embed-text-v1"
+text_embeddings_file = Path(__file__).parent / 'data' / 'text_embeddings.json'
+metadata_file = Path(__file__).parent / 'data' / 'metadata.json'
+
+# Create bedrock client and embedding function
+bedrock_client = boto3.client('bedrock-runtime', region_name='us-east-1')
+embedding_function = get_embedding_for_vectordb(bedrock_client, embedding_model_id)
+
+# Create vectorstore (or None if files don't exist)
+try:
+    vectorstore = create_langchain_faiss_vectorstore(text_embeddings_file, metadata_file, embedding_function)
+    print(f"✅ Loaded vectorstore with {vectorstore.index.ntotal} vectors")
+except FileNotFoundError as e:
+    print(f"⚠️  Warning: Embedding files not found. Copy text_embeddings.json and metadata.json to data/ directory.")
+    print(f"   RAG tool will not work until files are present.")
+    vectorstore = None
 
 
 # ============================================================
@@ -97,53 +147,36 @@ def create_reasoning_agent(model: BedrockConverseModel) -> Agent:
 
 def create_research_agent(model: BedrockConverseModel, data_dir: Path) -> Agent:
     """
-    Create data research agent (with file reading tools).
-    Handles searching through files and documents.
+    Create data research agent (with RAG search tool).
+    Handles semantic search through project documentation.
     """
     agent = Agent(
         model=model,
-        system_prompt=f"You search through files to find information. Files are located in: {data_dir}",
+        system_prompt="You search project documentation using semantic similarity to find relevant information.",
         deps_type=Path
     )
     
     @agent.tool
-    def read_file(ctx: RunContext[Path], file_path: str) -> str:
-        """Read the contents of a file.
+    def search_project_docs(ctx: RunContext[Path], query: str) -> str:
+        """Search project documentation using semantic similarity.
         
         Args:
-            file_path: Relative path to the file within the data directory
+            query: The search query to find relevant documents
         """
         try:
-            full_path = data_dir / file_path
-            if not full_path.exists():
-                return f"File not found: {file_path}"
+            if vectorstore is None:
+                return "Error: Vectorstore not loaded. Embedding files (text_embeddings.json, metadata.json) must be in data/ directory."
             
-            with open(full_path, 'r') as f:
-                content = f.read()
-            return content
-        except Exception as e:
-            return f"Error reading file: {str(e)}"
-    
-    @agent.tool
-    def list_files(ctx: RunContext[Path], directory: str = ".") -> list[str]:
-        """List all files in a directory.
-        
-        Args:
-            directory: Relative path to directory (default: current directory)
-        """
-        try:
-            dir_path = data_dir / directory
-            if not dir_path.exists():
-                return [f"Directory not found: {directory}"]
+            if not query:
+                return "Error: No search query provided. Please provide a search query."
             
-            files = []
-            for item in dir_path.rglob("*"):
-                if item.is_file():
-                    rel_path = item.relative_to(data_dir)
-                    files.append(str(rel_path))
-            return files
+            docs = vectorstore.similarity_search(query, k=3)
+            if not docs:
+                return "No relevant documents found for your query."
+            
+            return "\n\n---\n\n".join([doc.page_content for doc in docs])
         except Exception as e:
-            return [f"Error listing files: {str(e)}"]
+            return f"Error searching documents: {str(e)}"
     
     return agent
 
