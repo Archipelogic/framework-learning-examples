@@ -14,16 +14,21 @@ The orchestrator analyzes requests and routes to the appropriate specialist. No 
 
 ## Framework Comparison
 
-| Feature | CrewAI | Pydantic AI | Notes |
-|---------|--------|-------------|-------|
-| **Orchestration** | Sequential process with delegation | Tool-based (specialists as tools) | Both achieve intelligent routing |
-| **Learning Curve** | Moderate | Lower | Pydantic AI is more Pythonic |
-| **Type Safety** | No | Yes (Pydantic models) | Pydantic AI has structured outputs |
-| **Native Tools** | RagTool, inject_date | None | CrewAI has more built-in capabilities |
-| **LangChain Integration** | BaseTool wrappers required | Direct compatibility | Pydantic AI easier to integrate |
-| **Documentation** | Good | Excellent | Pydantic AI has clearer docs |
-| **Observability** | Phoenix (OpenTelemetry) | Phoenix (OpenTelemetry) | Both use same tracing |
-| **Best For** | Multi-agent workflows | Type-safe AI applications | Depends on use case |
+| Item (Scale 1-10, higher the better) | CrewAI | Pydantic AI | Comments |
+|---------------------------------------|--------|-------------|----------|
+| **Framework Design** | 8 | 9 | Both well-architected; Pydantic AI more Pythonic |
+| **Documentation** | 7 | 9 | CrewAI has good docs; Pydantic AI documentation is excellent and comprehensive |
+| **Framework Learning Curve** | 6 | 8 | CrewAI has more concepts to learn; Pydantic AI is straightforward |
+| **System Prompt** | 8 | 9 | Both support rich system prompts; Pydantic AI's agent.system_prompt is cleaner |
+| **Out of Box Coding** | 9 | 7 | CrewAI can generate Python with right packages; Pydantic AI needs explicit tools |
+| **Latency** | 7 | 7 | Similar performance on complex tasks; both use same LLM backend |
+| **Agents as Tools (Orchestration)** | 9 | 8 | CrewAI uses delegation naturally; Pydantic AI requires wrapping agents as tools |
+| **Independent Task Execution** | Yes | Possible but manual | CrewAI agents can work in parallel; Pydantic AI would need custom implementation |
+| **Graph Capability** | No | No | Neither has built-in graph workflows; would need LangGraph integration |
+| **Native Tools** | RagTool, inject_date | None | CrewAI has more built-in tools |
+| **LangChain Integration** | BaseTool wrappers required | Direct compatibility | Pydantic AI easier to integrate LangChain tools |
+| **Type Safety** | No | Yes (Pydantic models) | Pydantic AI has structured, validated outputs |
+| **Best For** | Multi-agent orchestration | Type-safe AI applications | Choose based on use case |
 
 ## Tool Priority
 
