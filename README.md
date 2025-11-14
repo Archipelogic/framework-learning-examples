@@ -17,18 +17,37 @@ The orchestrator analyzes requests and routes to the appropriate specialist. No 
 | Item (Scale 1-10, higher the better) | CrewAI | Pydantic AI | Comments |
 |---------------------------------------|--------|-------------|----------|
 | **Framework Design** | 8 | 9 | CrewAI: Built from scratch, LangChain-independent. Pydantic AI: Built by Pydantic team, powers OpenAI/Anthropic SDKs |
-| **Documentation** | 8 | 9 | CrewAI: Comprehensive with 1000+ doc pages, guides, and examples. Pydantic AI: Excellent, clear, type-focused |
+| **Documentation** | 7 | 9 | CrewAI: 1000+ pages but examples don't always work (native RagTool incompatible with precomputed embeddings). Pydantic AI: Excellent, clear |
 | **Framework Learning Curve** | 6 | 8 | CrewAI: More concepts (Agents, Tasks, Crews, Flows, Processes). Pydantic AI: Simpler, Pythonic, familiar patterns |
-| **System Prompt** | 9 | 9 | CrewAI: Rich role/goal/backstory system with prompts. Pydantic AI: Clean system_prompt with deps injection |
+| **System Prompt** | 9 | 9 | CrewAI: Rich role/goal/backstory system. Pydantic AI: Clean system_prompt with dependency injection |
 | **Out of Box Coding** | 10 | 7 | CrewAI: CodeInterpreterTool generates/executes Python code. Pydantic AI: Needs explicit @agent.tool definitions |
-| **Latency** | 7 | 7 | Similar - both support async, streaming, same LLM backends, performance depends on implementation |
-| **Agents as Tools (Orchestration)** | 10 | 8 | CrewAI: Native delegation with allow_delegation=True. Pydantic AI: Wrap agents as tools manually |
+| **Latency** | 6 | 7 | CrewAI: Slower RAG searches (LangSmith tracing errors slowed execution). Pydantic AI: Faster, cleaner execution |
+| **Agents as Tools (Orchestration)** | 10 | 8 | CrewAI: Native delegation with allow_delegation=True works well. Pydantic AI: Wrap agents as tools manually |
 | **Independent Task Execution** | Yes (async_execution) | Possible (asyncio) | CrewAI: Built-in async task execution. Pydantic AI: Manual async implementation required |
 | **Graph Capability** | Yes (Flows with @router) | Yes (graph with type hints) | CrewAI: Flows with conditional routing. Pydantic AI: Type-hint based graph definitions |
-| **Native Tools** | 50+ tools (RAG, File, DB, Search) | MCP, A2A protocol support | CrewAI: Extensive built-in tool library. Pydantic AI: Protocol-based, bring your own tools |
-| **LangChain Integration** | Native (BaseTool wrappers) | Direct (Pydantic validates everything) | CrewAI: Wraps LangChain tools. Pydantic AI: Pydantic is LangChain's validation layer |
-| **Type Safety** | No | Yes (Full type checking) | CrewAI: Dynamic, runtime validation. Pydantic AI: Compile-time type safety, IDE autocomplete |
-| **Best For** | Multi-agent orchestration, RAG, delegation | Type-safe apps, durable execution, evals | CrewAI: Enterprise workflows. Pydantic AI: Production reliability |
+| **Native Tools** | 50+ tools (many require workarounds) | MCP, A2A protocol support | CrewAI: RagTool doesn't support precomputed embeddings, had to use LangChain FAISS. Pydantic AI: Protocol-based |
+| **LangChain Integration** | Native (BaseTool wrappers) | Direct (seamless) | CrewAI: Requires wrapping LangChain tools. Pydantic AI: Pydantic is LangChain's validation layer, no wrapping needed |
+| **Type Safety** | No | Yes (Full type checking) | CrewAI: Dynamic, runtime errors. Pydantic AI: Compile-time type safety, IDE autocomplete catches errors early |
+| **Observability** | 5 (Phoenix issues) | 9 (Phoenix works) | CrewAI: Phoenix tracing incomplete, had instrumentation errors. Pydantic AI: Phoenix integration smooth |
+| **RAG Implementation** | 6 (complex workarounds) | 7 (custom implementation) | Both struggled with RAG tasks completing. CrewAI native RagTool failed, custom FAISS worked. Pydantic AI needed custom tools |
+| **Best For** | Multi-agent delegation workflows | Type-safe apps, clean implementations | CrewAI: Good when delegation works. Pydantic AI: Better developer experience, fewer surprises |
+
+## Known Issues & Workarounds
+
+### CrewAI
+- ❌ **Phoenix Tracing Incomplete**: CrewAIInstrumentor doesn't fully capture all traces - some agent interactions missing
+- ❌ **Native RagTool Limitation**: Doesn't support precomputed embeddings - had to use custom LangChain FAISS tool instead
+- ❌ **LangSmith API Errors**: Had to disable LangSmith tracing (`LANGCHAIN_TRACING_V2=false`) to prevent 400 errors during execution
+- ⚠️ **RAG Task Completion**: Knowledge retrieval agent sometimes struggles with complex semantic searches
+
+### Pydantic AI
+- ✅ **Phoenix Tracing Works**: PydanticAIInstrumentor correctly traces all operations
+- ⚠️ **RAG Task Completion**: Similar to CrewAI, complex retrieval queries sometimes incomplete
+- ⚠️ **Manual Tool Wrapping**: Need to manually wrap agents as tools for orchestration (more boilerplate)
+
+### Both Frameworks
+- ⚠️ **Semantic Search Quality**: Both rely on LLM's ability to refine queries - results vary with prompt engineering
+- ⚠️ **Bedrock Rate Limits**: Both can hit AWS Bedrock throttling on complex multi-agent workflows
 
 ## Tool Priority
 
@@ -36,6 +55,8 @@ Both implementations follow this priority:
 1. **Native framework tools first** (e.g., CrewAI's inject_date, RagTool)
 2. **LangChain tools second** (e.g., SQL tools)
 3. **Custom tools last** (only if no alternative exists)
+
+**Note**: Due to issues encountered, we had to deviate from this priority for RAG - using custom LangChain FAISS tools instead of native options.
 
 ## Setup
 
