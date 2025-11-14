@@ -45,7 +45,6 @@ from langchain_community.tools.sql_database.tool import (
     ListSQLDatabaseTool as LCListTool,
     QuerySQLDatabaseTool as LCQueryTool,
 )
-from pydantic import Field
 import json
 
 

@@ -30,16 +30,11 @@ from pydantic import BaseModel, Field
 from pydantic_ai import Agent, RunContext
 from pydantic_ai.models.bedrock import BedrockConverseModel
 from langchain_community.utilities import SQLDatabase
-from langchain_community.tools.sql_database.tool import (
-    InfoSQLDatabaseTool,
-    QuerySQLDatabaseTool
-)
 import numpy as np
 import boto3
 from langchain_community.vectorstores import FAISS
 from langchain_community.vectorstores.utils import DistanceStrategy
 from langchain_aws import BedrockEmbeddings
-from langchain_core.documents import Document
 
 # Suppress noisy warnings
 warnings.filterwarnings('ignore', category=Warning, message='.*Skipped unsupported reflection.*')
@@ -94,21 +89,6 @@ except FileNotFoundError as e:
     print(f"⚠️  Warning: Embedding files not found. Copy text_embeddings.json and metadata.json to data/ directory.")
     print(f"   RAG tool will not work until files are present.")
     vectorstore = None
-
-
-# ============================================================
-# OUTPUT STRUCTURES
-# ============================================================
-class GenericResult(BaseModel):
-    """Generic result structure"""
-    answer: str = Field(description="The final answer")
-    reasoning: str = Field(description="Step-by-step reasoning")
-
-
-class SQLResult(BaseModel):
-    """Structured output for SQL query results"""
-    query_executed: str = Field(description="The SQL query that was executed")
-    results: dict = Field(description="Results as JSON object")
 
 
 # ============================================================
