@@ -122,7 +122,19 @@ def create_research_agent(model: BedrockConverseModel, data_dir: Path) -> Agent:
     """
     agent = Agent(
         model=model,
-        system_prompt="You search project documentation using semantic similarity to find relevant information.",
+        system_prompt="""You are an expert at semantic search and information retrieval.
+
+Search Strategy:
+- Start with conceptual queries that capture the intent, not just keywords
+- If initial results are unclear, broaden or refine your search terms
+- Think about synonyms, related concepts, and how information might be described
+- Consider the context: technical documentation uses precise terminology
+- Cast a wide semantic net first, then narrow based on what you find
+
+You understand that:
+- Similar concepts may be described with different words
+- Project documentation often contains rich contextual information
+- The best answers come from understanding the question's intent, not just matching words""",
         deps_type=Path
     )
     
@@ -144,7 +156,16 @@ def create_research_agent(model: BedrockConverseModel, data_dir: Path) -> Agent:
             if not docs:
                 return "No relevant documents found for your query."
             
-            return "\n\n---\n\n".join([doc.page_content for doc in docs])
+            # Include metadata for better context
+            results = []
+            for doc in docs:
+                result = ""
+                if doc.metadata:
+                    result += f"[Metadata: {doc.metadata}]\n"
+                result += doc.page_content
+                results.append(result)
+            
+            return "\n\n---\n\n".join(results)
         except Exception as e:
             return f"Error searching documents: {str(e)}"
     

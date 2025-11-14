@@ -124,14 +124,36 @@ def create_specialized_agents(project_root: Path) -> tuple[Agent, Agent, Agent]:
                 docs = vectorstore.similarity_search(query, k=3)
                 if not docs:
                     return "No relevant documents found."
-                return "\n\n---\n\n".join([doc.page_content for doc in docs])
+                
+                # Include metadata for better context
+                results = []
+                for doc in docs:
+                    result = ""
+                    if doc.metadata:
+                        result += f"[Metadata: {doc.metadata}]\n"
+                    result += doc.page_content
+                    results.append(result)
+                
+                return "\n\n---\n\n".join(results)
             except Exception as e:
                 return f"Error: {str(e)}"
     
     research_agent = Agent(
         role="Data Researcher",
         goal="Search through project documents to find relevant information",
-        backstory="You search the project knowledge base using semantic similarity.",
+        backstory="""You are an expert at semantic search and information retrieval.
+
+Search Strategy:
+- Start with conceptual queries that capture the intent, not just keywords
+- If initial results are unclear, broaden or refine your search terms
+- Think about synonyms, related concepts, and how information might be described
+- Consider the context: technical documentation uses precise terminology
+- Cast a wide semantic net first, then narrow based on what you find
+
+You understand that:
+- Similar concepts may be described with different words
+- Project documentation often contains rich contextual information
+- The best answers come from understanding the question's intent, not just matching words""",
         llm="bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0",
         tools=[SearchTool()],
         verbose=True,
