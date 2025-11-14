@@ -94,17 +94,32 @@ class OrchestratorDeps(BaseModel):
 # SPECIALIZED AGENTS (Minimal Set)
 # ============================================================
 def create_reasoning_agent(model: BedrockConverseModel) -> Agent:
-    """General reasoning agent (with time tool)."""
+    """
+    Create analytical reasoning agent.
+    Handles calculations, logical reasoning, and general problem-solving.
+    """
     agent = Agent(
         model=model,
-        system_prompt="""You excel at reasoning, calculations, puzzles, and problem-solving.
-        You can handle time calculations, mathematical problems, riddles, multi-step reasoning,
-        and any task that requires logical thinking. Show your reasoning step by step."""
+        system_prompt="""You are an expert in analytical reasoning and problem-solving.
+
+Your Capabilities:
+- Logical deduction and multi-step reasoning
+- Pattern recognition and abstract thinking
+- Quantitative analysis and calculations
+- Temporal reasoning with current date/time context
+- Breaking down complex problems into manageable components
+
+Your Approach:
+- Start by understanding the core question or problem
+- Identify relevant information and constraints
+- Apply systematic reasoning to derive solutions
+- Verify conclusions for logical consistency
+- Explain your reasoning process clearly"""
     )
 
     @agent.tool
     def get_current_time(ctx: RunContext[None], timezone: str = "UTC") -> str:
-        """Get the current time in a specific timezone like 'America/Chicago' or 'UTC'."""
+        """Get the current time in any timezone for temporal reasoning and time-based calculations."""
         try:
             tz = pytz.timezone(timezone)
             current_time = datetime.now(tz)
@@ -139,11 +154,11 @@ You understand that:
     )
     
     @agent.tool
-    def search_project_docs(ctx: RunContext[Path], query: str) -> str:
-        """Search project documentation using semantic similarity.
+    def semantic_search(ctx: RunContext[Path], query: str) -> str:
+        """Search knowledge base using semantic similarity to find relevant information.
         
         Args:
-            query: The search query to find relevant documents
+            query: Conceptual search query to find relevant content
         """
         try:
             if vectorstore is None:
@@ -182,21 +197,33 @@ def create_database_agent(model: BedrockConverseModel, db_path: Path) -> Agent:
     # Create agent that will expose simple SQL tools
     agent = Agent(
         model=model,
-        system_prompt="You query databases using SQL and format results as JSON.",
+        system_prompt="""You are an expert in querying and analyzing structured data.
+
+Your Expertise:
+- Understanding data schemas and relationships
+- Constructing efficient queries to extract information
+- Interpreting query results in context
+- Identifying relevant data patterns and insights
+
+Your Approach:
+- First understand the data structure available
+- Formulate precise queries based on the question
+- Execute queries and interpret results
+- Present findings in a clear, meaningful way""",
         deps_type=Path,
     )
 
     @agent.tool
     def get_schema(ctx: RunContext[Path]) -> str:
-        """Get database schema information for available tables and columns."""
+        """Get data structure information including available tables, fields, and relationships."""
         try:
             return db.get_table_info()
         except Exception as e:
             return f"Error getting schema: {str(e)}"
 
     @agent.tool
-    def run_sql(ctx: RunContext[Path], query: str) -> str:
-        """Execute a SQL query against the SQLite database and return raw text results."""
+    def execute_query(ctx: RunContext[Path], query: str) -> str:
+        """Execute a query against structured data and return results."""
         try:
             raw = db.run(query)
             return str(raw)
@@ -231,14 +258,19 @@ def run_orchestration(user_prompt: str, project_root: Path) -> str:
     # Each specialist is exposed as a callable tool that the orchestrator can invoke
     orchestrator = Agent(
         model=model,
-        system_prompt="""You are a master orchestrator with access to specialized agents.
-        Analyze the user's request and call the appropriate specialist:
+        system_prompt="""You are an intelligent orchestrator with access to specialized capabilities.
         
-        - call_reasoning_specialist: for calculations, puzzles, riddles, and logical reasoning
-        - call_data_researcher: for searching through files and documents
-        - call_database_analyst: for querying databases and structured data
-        
-        Choose the most appropriate specialist and pass them the user's request.""",
+Analyze each request and route it to the appropriate specialist:
+
+- use_analytical_reasoning: Apply logical reasoning, pattern analysis, and problem-solving
+- use_knowledge_retrieval: Search and retrieve information from the knowledge base
+- use_data_analysis: Query and analyze structured data sources
+
+Your Role:
+- Understand the core intent of each request
+- Select the most appropriate specialist for the task
+- Delegate the full request context to the chosen specialist
+- Synthesize the specialist's response into a clear answer""",
         deps_type=OrchestratorDeps
     )
     
@@ -246,38 +278,38 @@ def run_orchestration(user_prompt: str, project_root: Path) -> str:
     # The orchestrator will call these based on prompt analysis
     
     @orchestrator.tool
-    def call_reasoning_specialist(ctx: RunContext[OrchestratorDeps], task: str) -> str:
-        """Call the Reasoning Specialist for calculations, puzzles, and logical reasoning.
+    def use_analytical_reasoning(ctx: RunContext[OrchestratorDeps], task: str) -> str:
+        """Apply analytical reasoning and problem-solving capabilities.
         
         Args:
-            task: The reasoning task to perform
+            task: The analytical task to perform
         """
-        print("\n→ Delegating to Reasoning Specialist")
+        print("\n→ Using Analytical Reasoning")
         result = reasoning_agent.run_sync(task)
         payload = getattr(result, "output", result)
         return str(payload)
     
     @orchestrator.tool
-    def call_data_researcher(ctx: RunContext[OrchestratorDeps], task: str) -> str:
-        """Call the Data Researcher for searching through files and documents.
+    def use_knowledge_retrieval(ctx: RunContext[OrchestratorDeps], task: str) -> str:
+        """Search and retrieve information from the knowledge base.
         
         Args:
-            task: The file search task to perform
+            task: The information retrieval task to perform
         """
-        print("\n→ Delegating to Data Researcher")
+        print("\n→ Using Knowledge Retrieval")
         data_dir = ctx.deps.project_root / 'data' / 'projects'
         result = research_agent.run_sync(task, deps=data_dir)
         payload = getattr(result, "output", result)
         return str(payload)
     
     @orchestrator.tool
-    def call_database_analyst(ctx: RunContext[OrchestratorDeps], task: str) -> str:
-        """Call the Database Analyst for database queries.
+    def use_data_analysis(ctx: RunContext[OrchestratorDeps], task: str) -> str:
+        """Query and analyze structured data sources.
         
         Args:
-            task: The database query task to perform
+            task: The data analysis task to perform
         """
-        print("\n→ Delegating to Database Analyst")
+        print("\n→ Using Data Analysis")
         result = database_agent.run_sync(task)
         payload = getattr(result, "output", result)
         return str(payload)

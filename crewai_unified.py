@@ -98,11 +98,23 @@ def create_specialized_agents(project_root: Path) -> tuple[Agent, Agent, Agent]:
     
     # 1. General Reasoning Agent (use native inject_date for time awareness)
     reasoning_agent = Agent(
-        role="Reasoning Specialist",
-        goal="Solve problems through logical reasoning and calculation",
-        backstory="""You excel at reasoning, calculations, puzzles, and problem-solving.
-        You can handle time calculations, mathematical problems, riddles, multi-step reasoning,
-        and any task that requires logical thinking. You have access to current date and time information.""",
+        role="Analytical Reasoning Specialist",
+        goal="Apply logical reasoning and analytical thinking to solve complex problems",
+        backstory="""You are an expert in analytical reasoning and problem-solving.
+
+Your Capabilities:
+- Logical deduction and multi-step reasoning
+- Pattern recognition and abstract thinking
+- Quantitative analysis and calculations
+- Temporal reasoning with current date/time context
+- Breaking down complex problems into manageable components
+
+Your Approach:
+- Start by understanding the core question or problem
+- Identify relevant information and constraints
+- Apply systematic reasoning to derive solutions
+- Verify conclusions for logical consistency
+- Explain your reasoning process clearly""",
         llm="bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0",
         inject_date=True,  # Native CrewAI time/date injection
         verbose=True,
@@ -112,8 +124,8 @@ def create_specialized_agents(project_root: Path) -> tuple[Agent, Agent, Agent]:
     # 2. Data Research Agent (use LangChain FAISS with pre-computed embeddings)
     # Note: Native RagTool doesn't support pre-computed embeddings
     class SearchTool(BaseTool):
-        name: str = "search_project_docs"
-        description: str = "Search project documentation using semantic similarity. Input: search query string."
+        name: str = "semantic_search"
+        description: str = "Search knowledge base using semantic similarity to find relevant information. Input: conceptual search query."
         
         def _run(self, query: str = "") -> str:
             if vectorstore is None:
@@ -139,8 +151,8 @@ def create_specialized_agents(project_root: Path) -> tuple[Agent, Agent, Agent]:
                 return f"Error: {str(e)}"
     
     research_agent = Agent(
-        role="Data Researcher",
-        goal="Search through project documents to find relevant information",
+        role="Knowledge Retrieval Specialist",
+        goal="Find and retrieve relevant information through intelligent search",
         backstory="""You are an expert at semantic search and information retrieval.
 
 Search Strategy:
@@ -171,30 +183,42 @@ You understand that:
     lc_list_tool = LCListTool(db=db)
     
     class QuerySQLTool(BaseTool):
-        name: str = "Query SQL Database"
-        description: str = "Execute SQL queries and return results"
+        name: str = "execute_query"
+        description: str = "Execute queries against structured data and return results"
         
         def _run(self, query: str) -> str:
             return lc_query_tool.run(query)
     
     class InfoSQLTool(BaseTool):
-        name: str = "Get SQL Table Info"
-        description: str = "Get information about database tables and schema"
+        name: str = "get_schema_info"
+        description: str = "Get information about data structure, tables, and available fields"
         
         def _run(self, table_names: str = "") -> str:
             return lc_info_tool.run(table_names)
     
     class ListSQLTool(BaseTool):
-        name: str = "List SQL Tables"
-        description: str = "List all available tables in the database"
+        name: str = "list_data_sources"
+        description: str = "List all available data sources and tables"
         
         def _run(self, tool_input: str = "") -> str:
             return lc_list_tool.run(tool_input)
     
     database_agent = Agent(
-        role="Database Analyst",
-        goal="Query databases to answer questions",
-        backstory="You use SQL tools to query databases and format results.",
+        role="Structured Data Specialist",
+        goal="Extract insights from structured data sources",
+        backstory="""You are an expert in querying and analyzing structured data.
+
+Your Expertise:
+- Understanding data schemas and relationships
+- Constructing efficient queries to extract information
+- Interpreting query results in context
+- Identifying relevant data patterns and insights
+
+Your Approach:
+- First understand the data structure available
+- Formulate precise queries based on the question
+- Execute queries and interpret results
+- Present findings in a clear, meaningful way""",
         llm="bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0",
         tools=[ListSQLTool(), InfoSQLTool(), QuerySQLTool()],
         verbose=True,
