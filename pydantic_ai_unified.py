@@ -27,7 +27,7 @@ os.environ["LANGCHAIN_TRACING_V2"] = "false"
 
 import phoenix as px
 from phoenix.otel import register
-from openinference.instrumentation.bedrock import BedrockInstrumentor
+from openinference.instrumentation.pydantic_ai import PydanticAIInstrumentor
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent, RunContext
 from pydantic_ai.models.bedrock import BedrockConverseModel
@@ -40,10 +40,10 @@ warnings.filterwarnings('ignore', category=Warning, message='.*Skipped unsupport
 warnings.filterwarnings('ignore', message='.*BatchSpanProcessor.*')
 warnings.filterwarnings('ignore', message='.*TracerProvider.*global.*')
 
-# Launch Phoenix and setup Bedrock tracing (align with crewai_unified)
+# Launch Phoenix and setup tracing
 session = px.launch_app()
 tracer_provider = register(endpoint="http://localhost:6006/v1/traces")
-BedrockInstrumentor().instrument(tracer_provider=tracer_provider)
+PydanticAIInstrumentor().instrument(tracer_provider=tracer_provider)
 
 
 # ============================================================

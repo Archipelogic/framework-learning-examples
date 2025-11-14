@@ -42,7 +42,8 @@ dependencies = [
     { name = "logfire" },
     { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "numpy", version = "2.3.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
-    { name = "openinference-instrumentation-bedrock" },
+    { name = "openinference-instrumentation-crewai" },
+    { name = "openinference-instrumentation-pydantic-ai" },
     { name = "pydantic-ai" },
     { name = "pytz" },
     { name = "pyyaml" },
@@ -64,7 +65,8 @@ requires-dist = [
     { name = "litellm", specifier = ">=1.0.0" },
     { name = "logfire", specifier = ">=0.40.0" },
     { name = "numpy", specifier = ">=1.24.0" },
-    { name = "openinference-instrumentation-bedrock", specifier = ">=0.1.0" },
+    { name = "openinference-instrumentation-crewai", specifier = ">=0.1.0" },
+    { name = "openinference-instrumentation-pydantic-ai", specifier = ">=0.1.0" },
     { name = "pydantic-ai", specifier = ">=0.0.14" },
     { name = "pytz", specifier = ">=2024.1" },
     { name = "pyyaml", specifier = ">=6.0" },
@@ -1045,15 +1047,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/82/2a/c06f1346079dbeddf5307bc7f4a190f26d2692d7420042d2fef21b9513e4/cyclopts-4.2.3.tar.gz", hash = "sha256:5949d5d0fc8f269547bdc507985d4d973cf6794ab781bf0600d5994eda29a471", size = 148688, upload-time = "2025-11-11T20:00:19.731Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/c1/24/8b13ebd2b1f26da4e3830a19bd05b56400b538c0aeb7050db9d3dd853303/cyclopts-4.2.3-py3-none-any.whl", hash = "sha256:4c2bc17af50e1a958f758cdc541f0a28b0eccf3f718e26be85b712c54ac0ef0b", size = 184319, upload-time = "2025-11-11T20:00:18.393Z" },
-]
-
-[[package]]
-name = "dacite"
-version = "1.9.2"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/55/a0/7ca79796e799a3e782045d29bf052b5cde7439a2bbb17f15ff44f7aacc63/dacite-1.9.2.tar.gz", hash = "sha256:6ccc3b299727c7aa17582f0021f6ae14d5de47c7227932c47fec4cdfefd26f09", size = 22420, upload-time = "2025-02-05T09:27:29.757Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/94/35/386550fd60316d1e37eccdda609b074113298f23cef5bddb2049823fe666/dacite-1.9.2-py3-none-any.whl", hash = "sha256:053f7c3f5128ca2e9aceb66892b1a3c8936d02c686e707bee96e19deef4bc4a0", size = 16600, upload-time = "2025-02-05T09:27:24.345Z" },
 ]
 
 [[package]]
@@ -3514,11 +3507,10 @@ wheels = [
 ]
 
 [[package]]
-name = "openinference-instrumentation-bedrock"
-version = "0.1.31"
+name = "openinference-instrumentation-crewai"
+version = "0.1.16"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "dacite" },
     { name = "openinference-instrumentation" },
     { name = "openinference-semantic-conventions" },
     { name = "opentelemetry-api" },
@@ -3527,9 +3519,27 @@ dependencies = [
     { name = "typing-extensions" },
     { name = "wrapt" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/74/1a/e8ad125bd244b00f0619df362c38fd705f5794234946be46cc3bdf9c65ec/openinference_instrumentation_bedrock-0.1.31.tar.gz", hash = "sha256:83e8044a0dd639cae12aa95443a1a879e6cd4efb3bceb656bbdbf21b24631fb4", size = 191587, upload-time = "2025-10-10T03:48:52.614Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/a1/fc/02eb76c5e29acff99a98f8c2a3b50ddd5a16cc4bb1541ccda5df923b8c4b/openinference_instrumentation_crewai-0.1.16.tar.gz", hash = "sha256:c2367e2809dca28a7bd9ec70cbdd72d7f1f74f5776995d58716404b612d15356", size = 11192, upload-time = "2025-10-30T18:49:59.785Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/df/fc/f9a4664ec22905affa85d4726de82438a3b23f147798f659097b88e8e2c5/openinference_instrumentation_bedrock-0.1.31-py3-none-any.whl", hash = "sha256:bbf0880cb2bda6706da8e2edea5da410dbc14127f99d14a11c043510bfe8b7c1", size = 55964, upload-time = "2025-10-10T03:48:48.653Z" },
+    { url = "https://files.pythonhosted.org/packages/94/79/44b0d211ebdb0d759904d4ea5671dca49f629ad84ff277d2d4687c70060b/openinference_instrumentation_crewai-0.1.16-py3-none-any.whl", hash = "sha256:8eb19e755cdebb0306365144c47f12b21b7d80758b165ab7f9e3b6c56078899d", size = 12701, upload-time = "2025-10-30T18:49:58.624Z" },
+]
+
+[[package]]
+name = "openinference-instrumentation-pydantic-ai"
+version = "0.1.9"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "openinference-instrumentation" },
+    { name = "openinference-semantic-conventions" },
+    { name = "opentelemetry-api" },
+    { name = "opentelemetry-instrumentation" },
+    { name = "opentelemetry-semantic-conventions" },
+    { name = "typing-extensions" },
+    { name = "wrapt" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/d1/28/d0f55236783b45613bfd041969203038b1ede0cba863381d22804705361a/openinference_instrumentation_pydantic_ai-0.1.9.tar.gz", hash = "sha256:f8963c81d39597ea1644885889a0bad01104497f70a802daa4564bf2b8e7f7ba", size = 17616, upload-time = "2025-10-15T10:14:45.808Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a4/ca/4e64e94dc72208495ba82d855aae07cc56421a6c6f9256e191185f6d5b12/openinference_instrumentation_pydantic_ai-0.1.9-py3-none-any.whl", hash = "sha256:cf1352b788c3507ad16b5a907d2128ec2fdcdf1f84a0be819fdff6723cfaa6fd", size = 15504, upload-time = "2025-10-15T10:14:44.996Z" },
 ]
 
 [[package]]

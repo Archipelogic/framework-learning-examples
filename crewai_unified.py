@@ -30,12 +30,12 @@ os.environ["LANGCHAIN_TRACING_V2"] = "false"
 
 import phoenix as px
 from phoenix.otel import register
-from openinference.instrumentation.bedrock import BedrockInstrumentor
+from openinference.instrumentation.crewai import CrewAIInstrumentor
 
-# Launch Phoenix and setup tracing (like teammate's implementation)
+# Launch Phoenix and setup tracing
 session = px.launch_app()
 tracer_provider = register(endpoint="http://localhost:6006/v1/traces")
-BedrockInstrumentor().instrument(tracer_provider=tracer_provider)
+CrewAIInstrumentor().instrument(tracer_provider=tracer_provider, skip_dep_check=True)
 
 # Import CrewAI after instrumentation
 from crewai import Agent, Task, Crew, Process
