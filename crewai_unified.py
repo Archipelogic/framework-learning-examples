@@ -39,10 +39,6 @@ BedrockInstrumentor().instrument(tracer_provider=tracer_provider)
 from crewai import Agent, Task, Crew, Process
 from crewai.tools import BaseTool
 from langchain_community.utilities import SQLDatabase
-from langchain_community.vectorstores import FAISS
-from langchain_community.vectorstores.utils import DistanceStrategy
-from langchain_aws import BedrockEmbeddings
-import numpy as np
 import boto3
 from langchain_community.tools.sql_database.tool import (
     InfoSQLDatabaseTool as LCInfoTool,
@@ -50,6 +46,7 @@ from langchain_community.tools.sql_database.tool import (
     QuerySQLDatabaseTool as LCQueryTool,
 )
 import json
+from embedding import create_langchain_faiss_vectorstore, get_embedding_for_vectordb
 
 
 # ============================================================
@@ -61,23 +58,13 @@ metadata_file = Path(__file__).parent / 'data' / 'metadata.json'
 
 vectorstore = None
 try:
-    # Load pre-computed embeddings
-    text_embeddings = json.load(open(text_embeddings_file))
-    text_embeddings = [(text, np.array(vec)) for text, vec in text_embeddings]
-    metadata_list = json.load(open(metadata_file))
-    
-    # Create embedding function (only for query embedding)
+    # Create bedrock client and embedding function (only for query embedding)
     bedrock_client = boto3.client('bedrock-runtime', region_name='us-east-1')
-    embedding_function = BedrockEmbeddings(client=bedrock_client, model_id="amazon.titan-embed-text-v1")
+    embedding_model_id = "amazon.titan-embed-text-v1"
+    embedding_function = get_embedding_for_vectordb(bedrock_client, embedding_model_id)
     
-    # Create FAISS vectorstore
-    vectorstore = FAISS.from_embeddings(
-        text_embeddings=text_embeddings,
-        embedding=embedding_function.embed_query,
-        metadatas=metadata_list,
-        distance_strategy=DistanceStrategy.MAX_INNER_PRODUCT,
-        relevance_score_fn=lambda distance: (distance + 1.0) / 2.0
-    )
+    # Load vectorstore from pre-computed embeddings
+    vectorstore = create_langchain_faiss_vectorstore(text_embeddings_file, metadata_file, embedding_function)
     print(f"✅ Loaded vectorstore with {vectorstore.index.ntotal} vectors")
 except FileNotFoundError:
     print(f"⚠️  Warning: Embedding files not found in data/ directory.")

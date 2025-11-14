@@ -30,11 +30,8 @@ from pydantic import BaseModel, Field
 from pydantic_ai import Agent, RunContext
 from pydantic_ai.models.bedrock import BedrockConverseModel
 from langchain_community.utilities import SQLDatabase
-import numpy as np
+from embedding import create_langchain_faiss_vectorstore, get_embedding_for_vectordb
 import boto3
-from langchain_community.vectorstores import FAISS
-from langchain_community.vectorstores.utils import DistanceStrategy
-from langchain_aws import BedrockEmbeddings
 
 # Suppress noisy warnings
 warnings.filterwarnings('ignore', category=Warning, message='.*Skipped unsupported reflection.*')
@@ -54,31 +51,20 @@ text_embeddings_file = Path(__file__).parent / 'data' / 'text_embeddings.json'
 metadata_file = Path(__file__).parent / 'data' / 'metadata.json'
 
 # Load vectorstore from pre-computed embeddings (or None if files don't exist)
+vectorstore = None
 try:
-    # Load pre-computed embeddings
-    text_embeddings = json.load(open(text_embeddings_file))
-    text_embeddings = [(text, np.array(vec)) for text, vec in text_embeddings]
-    metadata_list = json.load(open(metadata_file))
-    
-    # Create embedding function (only used for query embedding, not document embedding)
+    # Create bedrock client and embedding function (only for query embedding)
     bedrock_client = boto3.client('bedrock-runtime', region_name='us-east-1')
-    embedding_function = BedrockEmbeddings(client=bedrock_client, model_id="amazon.titan-embed-text-v1")
+    embedding_model_id = "amazon.titan-embed-text-v1"
+    embedding_function = get_embedding_for_vectordb(bedrock_client, embedding_model_id)
     
-    # Create FAISS vectorstore from pre-computed embeddings
-    vectorstore = FAISS.from_embeddings(
-        text_embeddings=text_embeddings,
-        embedding=embedding_function.embed_query,
-        metadatas=metadata_list,
-        distance_strategy=DistanceStrategy.MAX_INNER_PRODUCT,
-        relevance_score_fn=lambda distance: (distance + 1.0) / 2.0
-    )
+    # Load vectorstore from pre-computed embeddings
+    vectorstore = create_langchain_faiss_vectorstore(text_embeddings_file, metadata_file, embedding_function)
     print(f"✅ Loaded vectorstore with {vectorstore.index.ntotal} vectors from pre-computed embeddings")
 except FileNotFoundError:
     print(f"⚠️  Warning: Embedding files not found in data/ directory.")
-    vectorstore = None
 except Exception as e:
     print(f"⚠️  Warning: Could not load vectorstore: {e}")
-    vectorstore = None
 
 
 # ============================================================
