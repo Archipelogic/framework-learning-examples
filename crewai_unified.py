@@ -131,17 +131,20 @@ Your Approach:
     
     # 2. Data Research Agent (use LangChain FAISS with pre-computed embeddings)
     # Note: Native RagTool doesn't support pre-computed embeddings
+    # Capture vectorstore in closure to avoid scope issues
+    _vectorstore = vectorstore
+    
     class SearchTool(BaseTool):
         name: str = "semantic_search"
         description: str = "Search knowledge base using semantic similarity to find relevant information. Input: conceptual search query."
         
         def _run(self, query: str = "") -> str:
-            if vectorstore is None:
+            if _vectorstore is None:
                 return "Error: Vectorstore not loaded. Embedding files must be in data/ directory."
             if not query:
                 return "Error: No search query provided."
             try:
-                docs = vectorstore.similarity_search(query, k=3)
+                docs = _vectorstore.similarity_search(query, k=3)
                 if not docs:
                     return "No relevant documents found."
                 
